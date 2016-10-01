@@ -4,6 +4,8 @@ import sys
 import time
 import math
 import random
+#functions and variables
+complete = False
 sys.setrecursionlimit(100000000)
 master = Tk()
 master.wm_title("Gravitpy")
@@ -11,6 +13,7 @@ w = Canvas(master, width=1000, height=1000)
 w.pack()
 currr = 0
 rad = []
+numberofplanets=0
 #debug lines
 w.create_rectangle(0,0, 1000, 1000, fill="black")
 w.create_line(0, 0, 1000, 1000,fill="red", dash=(4, 4))
@@ -19,7 +22,7 @@ for i in range(1,10):
     lfill = "red"
     if i == 5: lfill = "green"
     w.create_line(100*i,0,100*i,1000,fill=lfill, dash = (4,4))
-    w.create_line(0,100*i,1000,100*i, fill=lfill, dash = (4,4))             
+    w.create_line(0,100*i,1000,100*i, fill=lfill, dash = (4,4))
 #constants
 G = 6.67300 * 10 **-11
 #2d arrays
@@ -39,7 +42,7 @@ done = False
 clicked = False
 sclicked = False
 def drawobjects():
-       done = False 
+       done = False
        w.update()
        time.sleep(0.1)
        for i in range(0,20):
@@ -49,8 +52,8 @@ def drawobjects():
                done = True
        if sclicked == True:
            calculatedeltaXY()
+       for i in range(0,20): DELTAXY[i] = ["n","n"]
        drawobjects()
-numberofplanets=0
 def calculatedeltaXY():
         global currr
         global G
@@ -59,32 +62,39 @@ def calculatedeltaXY():
         global object2xy
         xforce = 0
         yforce = 0
+        planets = 0
         objectxy = int(OBJECTS[currr-1][0]) - int(OBJECTS[currr-1][1]),int(OBJECTS[currr-1][2]) - int(OBJECTS[currr-1][3])
         list = (OBJECTS[currr-1][0],OBJECTS[currr-1][1],OBJECTS[currr-1][2],OBJECTS[currr-1][3])
         for planets in range(0,currr-1):
-            print("planets",planets)
-            print("currr",currr-1)
-            if OBJECTS[planets][0] != "n" or currr != planets:
-                print("in if",OBJECTS[planets][0])
-                for each in DELTAXY:
-                    print(each)
+            print(planets)
+            if OBJECTS[planets][0] != "n":
+                print("=================================")
+                print("planets",planets,"\r","numberofvalues",currr-1,"\r","currr",currr)
+                print("=================================")
                 force = 0
                 object2xy = int(OBJECTS[planets][0]) - int(OBJECTS[planets][1]),int(OBJECTS[planets][2]) - int(OBJECTS[planets][3])
                 list2 = (OBJECTS[planets][0],OBJECTS[planets][1],OBJECTS[planets][2],OBJECTS[planets][3])
-                if list == list2: planets +=1
+                #if list == list2:
+                #if OBJECTS[planets+1][0] != "n":
+                #planets +=1
+                #else:continue
                 rad = calculateradius(objectxy,object2xy)
                 dx = abs(objectxy[1] - object2xy[1])
-                dy = abs(objectxy[0] - object2xy[0])       
+                dy = abs(objectxy[0] - object2xy[0])
                 if dx == 0: dx +=1
                 theta = math.degrees(math.atan(dy//dx))
                 print("planetsinloop",planets)
-                #print(G,OBJECTS[currr-1][4]*10**24,"obj",OBJECTS[planets][4]*10**24,"rad",rad)
+                print(G,OBJECTS[currr-1][4],"obj",OBJECTS[planets][4],"rad",rad)
                 force = (G*(OBJECTS[currr-1][4]*10**24*OBJECTS[planets][4]*10**24)/rad**2)
                 xforce += (force*math.sin(theta)) // (OBJECTS[currr-1][4]*10**24)/ 1000
                 yforce += (force*math.cos(theta)) // (OBJECTS[currr-1][4]*10**24) / 1000
                 print("xforce",xforce,"yforce",yforce)
             DELTAXY[currr-2][0] = xforce
+            #DELTAXY[planets+1][0] += -xforce
             DELTAXY[currr-2][1] = yforce
+            #DELTAXY[planets+1][1] += -yforce
+            for each in DELTAXY:
+                print(each)
 def calculateradius(object1,object2):
         #find radius between objects:
         a = abs(objectxy[0] - object2xy[0])
@@ -124,7 +134,8 @@ def rclickfunct(event):
     OBJECTS[currr][5] = 0
     OBJECTS[currr][6] = 0
     w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill="Yellow")
+#keybinds
 w.bind("<Button-1>",clickfunct)
 w.bind("<Button-3>",rclickfunct)
-complete = False
+#tickloop
 drawobjects()
