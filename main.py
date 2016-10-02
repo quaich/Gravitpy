@@ -4,8 +4,6 @@ import sys
 import time
 import math
 import random
-#functions and variables
-complete = False
 sys.setrecursionlimit(100000000)
 master = Tk()
 master.wm_title("Gravitpy")
@@ -74,10 +72,10 @@ def calculatedeltaXY():
                 force = 0
                 object2xy = int(OBJECTS[planets][0]) - int(OBJECTS[planets][1]),int(OBJECTS[planets][2]) - int(OBJECTS[planets][3])
                 list2 = (OBJECTS[planets][0],OBJECTS[planets][1],OBJECTS[planets][2],OBJECTS[planets][3])
-                #if list == list2:
-                #if OBJECTS[planets+1][0] != "n":
-                #planets +=1
-                #else:continue
+              #  if list == list2:
+             #       if OBJECTS[planets+1][0] != "n":
+             #           planets +=1
+              #  else:continue
                 rad = calculateradius(objectxy,object2xy)
                 dx = abs(objectxy[1] - object2xy[1])
                 dy = abs(objectxy[0] - object2xy[0])
@@ -134,8 +132,7 @@ def rclickfunct(event):
     OBJECTS[currr][5] = 0
     OBJECTS[currr][6] = 0
     w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill="Yellow")
-#keybinds
 w.bind("<Button-1>",clickfunct)
 w.bind("<Button-3>",rclickfunct)
-#tickloop
+complete = False
 drawobjects()
