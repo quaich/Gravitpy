@@ -4,7 +4,7 @@ from tkinter import * #enables use of the Tkinter UI, responsible for drawing of
 import time #needed for restriction of refresh rate (may not be needed)
 import math #needed for physics calculation
 import random #for some more fun parts of the program.
-#functions and variables		
+#functions and variables
 #many of these variables can easily be locatlised.
 master = Tk() #master window
 alphabet=[]
@@ -14,7 +14,7 @@ master.wm_title(systemname)
 w = Canvas(master, width=1000, height=1000,bg="black") #generate 1000x1000 canvas
 w.pack() #packdat
 currr = 0 #The row number in the 2d array "OBJECTS" that is avalible for use.
-rad = [] #radius 
+rad = [] #radius
 numberofplanets=0 #duh
 objectxy = 0 #centre of circle x/y
 object2xy =0 #centre of second objects x/y
@@ -59,8 +59,9 @@ Collums of OBJECTS:
 """
 def drawobjects():
        if currr > 1:
-           for main in range(0,currr):
-               for sno in range(0,step+1):
+           for sno in range(0,step+1):
+               #print("s",sno,"/",step)
+               for main in range(0,currr):
                    #print("-------------------------------LOOP 1------------------------------")
                    list1 = (OBJECTS[main][0],OBJECTS[main][1],OBJECTS[main][2],OBJECTS[main][3])
                    #objectxy = (OBJECTS[main][2] + 0.5*OBJECTS[main][0] - OBJECTS[main][2]),(round(OBJECTS[main][3] + 0.5*(round(OBJECTS[main][1]) - round(OBJECTS[main][3])))))
@@ -70,26 +71,24 @@ def drawobjects():
                    calculatedeltaXY(currr,G,objectxy,object2xy,list1,main)
                    OBJECTS[main][8] = objectxy [0]
                    OBJECTS[main][9] = objectxy [1]
-           moveobjects()
-def moveobjects(): 
+               moveobjects()
+def moveobjects():
     global drawtrail
     for travel in range(0,currr):
         #print("---------------------------------LOOP 3----------------------------------")
         #print("currr",currr,"travel",travel)
         changex = OBJECTS[travel][6]
         changey = OBJECTS[travel][7]
-        #print("BEFORE",OBJECTS[travel][0],OBJECTS[travel][1],OBJECTS[travel][2],OBJECTS[travel][3],changex,changey)        
-        OBJECTS[travel][0] += (round(changex)/100000)
-        OBJECTS[travel][1] += (round(changey)/100000)
-        OBJECTS[travel][2] += (round(changex)/100000)
-        OBJECTS[travel][3] += (round(changey)/100000)
+        #print("BEFORE",OBJECTS[travel][0],OBJECTS[travel][1],OBJECTS[travel][2],OBJECTS[travel][3],changex,changey)
+        OBJECTS[travel][0] += (round(changex)/1000000)
+        OBJECTS[travel][1] += (round(changey)/1000000)
+        OBJECTS[travel][2] += (round(changex)/1000000)
+        OBJECTS[travel][3] += (round(changey)/1000000)
         #print("AFTER",OBJECTS[travel][0],OBJECTS[travel][1],OBJECTS[travel][2],OBJECTS[travel][3])
-        #objectxy = (round(OBJECTS[travel][2] + 0.5*(round(OBJECTS[travel][0]) - round(OBJECTS[travel][2]))),(round(OBJECTS[travel][3] + 0.5*(round(OBJECTS[travel][1]) - round(OBJECTS[travel][3])))))
         objectxy = ((OBJECTS[travel][0]+OBJECTS[travel][2])/2),((OBJECTS[travel][1]+OBJECTS[travel][3])/2)
         if drawtrail == True:
             if OBJECTS[travel][8] == "n": continue
             w.create_line(OBJECTS[travel][8],OBJECTS[travel][9],objectxy[0],objectxy[1],fill="white",tags="trail")
-        w.update()
         w.delete("oval")
         for x in range(0,currr):
             #print("currr",currr,"x",x)
@@ -109,11 +108,11 @@ def calculatedeltaXY(currr,G,objectxy,object2xy,list1,main):
             #print("list1",list1,"list2",list2)
             if list1 == list2:
                 #print("Didn't consider duo",currr)
-                continue      
-            rad,theta,xn,yn = calculatevariables(objectxy,object2xy)           
+                continue
+            rad,theta,xn,yn = calculatevariables(objectxy,object2xy)
             #print("planetsinloop",planets)
             #print(G,OBJECTS[currr-1][4],"obj",OBJECTS[planets][4],"rad",rad,"theta",theta)
-            force = ((G*OBJECTS[currr-1][4]*(10**24)*(OBJECTS[planets][4]*(10**24)))/rad**2)/8
+            force = ((G*OBJECTS[currr-1][4]*(10**24)*(OBJECTS[planets][4]*(10**24)))/rad**2)/step
             if xn == True: xforce += -((force*math.sin(theta)) / (OBJECTS[currr-1][4]*(10**24)) / 10000)
             else: xforce += ((force*math.sin(theta)) / (OBJECTS[currr-1][4]*(10**24)) / 10000)
             if yn == True: yforce += -((force*math.cos(theta)) / (OBJECTS[currr-1][4]*(10**24)) / 10000)
@@ -158,7 +157,7 @@ def rclickfunct(event):
     OBJECTS[currr][1] = event.y-10
     OBJECTS[currr][2] = event.x+10
     OBJECTS[currr][3] = event.y+10
-    OBJECTS[currr][4] = 10
+    OBJECTS[currr][4] = 100
     OBJECTS[currr][5] = "Yellow"
     w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=OBJECTS[currr][5],tags="oval")
     currr +=1
