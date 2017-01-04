@@ -44,7 +44,7 @@ ox = 0
 oy = 0
 #2d arrays
 paused = False
-OBJECTS = [["n" for x in range(17)] for y in range(10)]#(Y,X) #2d array for planet variables
+OBJECTS = [["n" for x in range(17)] for y in range(100)]#(Y,X) #2d array for planet variables
 exclude = [] #temporary mesure
 disco = False
 imported = False
@@ -215,7 +215,7 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy):
 def colide(mainl,planets,radius):
     if radius < OBJECTS[mainl][10]:
         w.lower(OBJECTS[planets][14])
-        if radius < OBJECTS[mainl][14]: return True
+        if radius < OBJECTS[mainl][10]: return True
     elif radius < OBJECTS[planets][10]:
         w.lower(OBJECTS[mainl][14])
         if radius < OBJECTS[planets][10]: return True
