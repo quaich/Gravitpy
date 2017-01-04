@@ -44,6 +44,7 @@ ox = 0
 oy = 0
 #2d arrays
 paused = False
+prevpaused = paused
 OBJECTS = [["n" for x in range(17)] for y in range(100)]#(Y,X) #2d array for planet variables
 exclude = [] #temporary mesure
 disco = False
@@ -246,11 +247,16 @@ def drawtrail(prevxy,objectxy,mainl):
            w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBJECTS[mainl][5],tags="t",)
        w.lower("t")
 
-def playpause():
+def playpause(colourc):
        global paused
-       if playp["text"] == "▐▐  ": playp["text"] = " ► "
-       else: playp["text"] = "▐▐  "
-       paused = not paused
+       if colourc == True:
+           prevpaused = paused
+           playp["text"] = " ► "
+           paused = True
+       else:
+           if playp["text"] == "▐▐  ":playp["text"] = " ► "
+           else: playp["text"] = "▐▐  "
+           paused = not paused
 
 def clickfunct(event):
        global ox
@@ -286,11 +292,14 @@ def release(event):
 def toggle():
      if disco == True: return('#%02x%02x%02x' % (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
      else: return("White")
-def getcolour():
-    global planetcolour
-    playpause()
+def getcolour(planetcolour,prevpaused):
+    global paused
+    prevpaused = paused
+    playpause(True)
     planetcolour = askcolor()
-    playpause()
+    paused = prevpaused
+    if paused == True: playp["text"] = " ► "
+    else: playp["text"] = "▐▐  "
 ###LOAD AND SAVE SYSTEM###
 def load():
        global imported
@@ -362,7 +371,7 @@ def startoggle(): #make these shift all in one direction at some point
 w.configure(background="Black")
 b1 = w.create_rectangle(1001,0,1205,1000,fill="white")
 
-playp = Button(master,text="▐▐  ", command=playpause,font=("Helvetica", 12))
+playp = Button(master,text="▐▐  ", command =lambda:playpause(False),font=("Helvetica", 12))
 playp.place(x=1100,y=5,width=30,height=30)
 
 trailbutton = Button(master, text="Toggle Trail off", command=lambda: trailtoggle(currr))
@@ -371,7 +380,7 @@ trailbutton.place(x=1090,y=100,width=120)
 discotrail = Button(master,command=fml)
 discotrail.place(x=1190,y=0,width=10,height=10)
 
-colourchoose = Button(master,text="Select colour",command=getcolour)
+colourchoose = Button(master,text="Select colour",command=lambda:getcolour(planetcolour,prevpaused))
 colourchoose.place(x=1090,y=160,width = 120)
 
 
