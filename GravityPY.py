@@ -292,8 +292,9 @@ def release(event):
 def toggle():
      if disco == True: return('#%02x%02x%02x' % (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
      else: return("White")
-def getcolour(planetcolour,prevpaused):
+def getcolour(prevpaused):
     global paused
+    global planetcolour
     prevpaused = paused
     playpause(True)
     planetcolour = askcolor()
@@ -380,7 +381,7 @@ trailbutton.place(x=1090,y=100,width=120)
 discotrail = Button(master,command=fml)
 discotrail.place(x=1190,y=0,width=10,height=10)
 
-colourchoose = Button(master,text="Select colour",command=lambda:getcolour(planetcolour,prevpaused))
+colourchoose = Button(master,text="Select colour",command=lambda:getcolour(prevpaused))
 colourchoose.place(x=1090,y=160,width = 120)
 
 
@@ -404,13 +405,13 @@ w.create_text(1040,63,text="Intergration \nMethod")
 mass = IntVar()
 mass.set(100)
 w.create_text(1060,227,text= "Mass",font=("Helvetica", 10))
-Mass = Entry(master,width=10,textvariable=mass)
+Mass = Entry(master,width=6,textvariable=mass)
 Mass.place(x=1100,y=220)
 #Density#
 density = IntVar()
 density.set(20)
 w.create_text(1065,267,text= "Density",font=("Helvetica",10))
-Density = Entry(master,width=10, textvariable=density)
+Density = Entry(master,width=6, textvariable=density)
 Density.place(x=1100,y = 260)
 
 
