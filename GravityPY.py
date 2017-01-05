@@ -44,12 +44,12 @@ ox = 0
 oy = 0
 #2d arrays
 paused = False
-prevpaused = paused
+prevpaused = False
 OBJECTS = [["n" for x in range(17)] for y in range(100)]#(Y,X) #2d array for planet variables
 exclude = [] #temporary mesure
 disco = False
 imported = False
-planetcolour = ((255,255,255),"#ffffff")
+planetcolour = ((255,0,0),"#FF0000")
 """
 Collums of OBJECTS:
 0 = The x0
@@ -70,7 +70,12 @@ Collums of OBJECTS:
 15 = prev time
 16 = theta
 """
+safetopause = False
+tbp = False
+tbpc = False
 def main():
+       global safetopause
+       safetopause = False
        if currr > 1:
                for mainl in range(0,currr): #for more than one object
                    if mainl not in exclude:
@@ -82,18 +87,15 @@ def main():
                                     alone = False
                                     break
                            x+=1
-                       if alone == True:
-                           print("'ome alone")
-                           solo(mainl)
+                       if alone == True: solo(mainl)
                        if OBJECTS[mainl][0] != "n" and OBJECTS[mainl][0] != "d":
                            list1 = (OBJECTS[mainl][0],OBJECTS[mainl][1],OBJECTS[mainl][2],OBJECTS[mainl][3])
                            objectxy = [((OBJECTS[mainl][0]+OBJECTS[mainl][2])/2),((OBJECTS[mainl][1]+OBJECTS[mainl][3])/2)]
                            calculatedeltaXY(currr,G,objectxy,list1,mainl,exclude)
                            OBJECTS[mainl][8] = objectxy [0]
                            OBJECTS[mainl][9] = objectxy [1]
-
        if currr == 1: solo(0)
-
+       safetopause = True
 def solo(no):
         x = ((OBJECTS[no][0]+OBJECTS[no][2])/2)
         y = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
@@ -123,9 +125,8 @@ def calculatedeltaXY(currr,G,objectxy,list1,mainl,exclude):
                                          OBJECTS[planets][4] += OBJECTS[mainl][4]
                                   exclude.append(tbd)
                                   w.delete(OBJECTS[tbd][14])
-                                  print("test123",OBJECTS[tbd])
                                   for x in range(0,len(OBJECTS[tbd])): OBJECTS[tbd][x] = "d"
-                           ###Calc variables##
+                           ###Calc variables###
                            ###EULER###
                            else:
                                   if default.get() == "Euler 8x" or default.get() == "Euler":
@@ -142,7 +143,6 @@ def maths(objectxy,object2xy):
         b = int(objectxy[1] - object2xy[1])
         xn = False
         yn = False
-        #print("a",a,"b",b)
         radius = math.sqrt((a**2) + (b**2)) #Pythagorus theorem
         if radius != 0:
                if a == 0 : theta = 0 #change in x is 0 and we dont want an error to be thrown.
@@ -165,7 +165,6 @@ def physics(mainl,planets,objectxy,object2xy,step,exclude):
        if yn == True: accelerationy = -(Fgrav*math.sin(theta))
        else: accelerationy = Fgrav*math.sin(theta)
        currenttime = time.time() - otime
-       #print("TIME",currenttime)
        #Resolving (Right) (positive x)
        vx = accelerationx*currenttime / (step+1)
        vy = accelerationy*currenttime / (step+1)
@@ -211,6 +210,7 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy):
     OBJECTS[currr][14] = w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=OBJECTS[currr][5],tags="oval")
     currr +=1
     w.lower("oval")
+    w.lower("star")
     w.update()
 
 def colide(mainl,planets,radius):
@@ -233,9 +233,7 @@ def trailtoggle(currr):
            w.delete()
            trailbutton["text"] = "Toggle Trail on"
            w.delete("t")
-    else:
-           trailbutton["text"] = "Toggle Trail off"
-
+    else: trailbutton["text"] = "Toggle Trail off"
     trail = not trail
 
 def drawtrail(prevxy,objectxy,mainl):
@@ -250,14 +248,22 @@ def drawtrail(prevxy,objectxy,mainl):
 def playpause(colourc):
        global paused
        if colourc == True:
-           prevpaused = paused
-           playp["text"] = " ► "
-           paused = True
-       else:
-           if playp["text"] == "▐▐  ":playp["text"] = " ► "
+           if paused != True:
+                  prevpaused = paused
+                  playp["text"] = " ► "
+                  paused = True
+       elif colourc ==  False:
+           if playp["text"] == "▐▐  ": playp["text"] = " ► "
            else: playp["text"] = "▐▐  "
            paused = not paused
-
+       w.update()
+       
+def safetypause(colourc):
+       global tbp
+       if paused == True:
+              playpause(colourc)
+              tbp = False
+       else: tbp = True
 def clickfunct(event):
        global ox
        global oy
@@ -289,30 +295,48 @@ def release(event):
        vx = cx/((lmass)*5)
        vy = cy/((lmass)*5)
        createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy)
+
 def toggle():
      if disco == True: return('#%02x%02x%02x' % (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
      else: return("White")
 def getcolour(prevpaused):
     global paused
     global planetcolour
+    global tbpc
     prevpaused = paused
-    playpause(True)
-    planetcolour = askcolor()
-    paused = prevpaused
-    if paused == True: playp["text"] = " ► "
-    else: playp["text"] = "▐▐  "
+    if paused == True:
+           askcolour(prevpaused)
+           tbpc = False
+    else: tbpc = True
+
+def askcolour(prevpaused):
+       global planetcolour
+       planetcolour = askcolor()
+def startoggle(): #make these shift all in one direction at some point
+    if stary["text"] == "Toggle Stars Off":
+        w.delete("star")
+        stary["text"] = "Toggle Stars On"
+    else:
+        for i in range(0,1000):
+            for x in range(0,1): #make this variable
+                ran = random.randint(0,1000)
+                w.create_oval(ran,i,ran,i,outline="White",tags="star")
+        w.lower("star")
+        stary["text"] = "Toggle Stars Off"
+        
 ###LOAD AND SAVE SYSTEM###
 def load():
        global imported
+       global OBJECTS
        imported = True
        file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
        with open(file,'r') as load:
+             y = 0
+             for dely in range(0,len(OBJECTS)):
+                    for delx in range(0,len(OBJECTS[dely])):
+                           OBJECTS[dely][delx] = "n"
              lines = [line.split() for line in load]
              OBJECTS = lines
-             y = 0
-             for row in OBJECTS:
-                    for x in range(0,len(row)):
-                           OBJECTS[row][x] = "n"
              w.delete("oval","t")
              for x in lines:
                      try: OBJECTS[y][0] = float(OBJECTS[y][0])
@@ -332,7 +356,7 @@ def load():
                      try:
                             OBJECTS[y][15] = float(OBJECTS[y][15])
                             OBJECTS[y][16] = float(OBJECTS[y][16])
-                     except: print("k lol")
+                     except: pass
                      y+=1
              OBJECTS = lines
        i = 0
@@ -343,8 +367,6 @@ def load():
                      break
             createplanet(OBJECTS[i][10],OBJECTS[i][4],((OBJECTS[i][0]+OBJECTS[i][2])/2),((OBJECTS[i][1]+OBJECTS[i][3])/2),OBJECTS[i][11],OBJECTS[i][12],OBJECTS[i][13],OBJECTS[i][6],OBJECTS[i][7])
             i += 1
-      # except:
-      #        print("An error occured")
 def save():
        file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save")
        for lines in OBJECTS:
@@ -352,27 +374,13 @@ def save():
                      file.write(str(entity))
                      file.write(" ")
               file.write("\n")
-def startoggle(): #make these shift all in one direction at some point
-    if stary["text"] == "Toggle Stars Off":
-        w.delete("star")
-        stary["text"] = "Toggle Stars On"
-    else:
-        for i in range(0,1000):
-            for x in range(0,1): #make this variable
-                ran = random.randint(0,1000)
-                w.create_oval(ran,i,ran,i,outline="White",tags="star")
-        w.lower("star")
-        stary["text"] = "Toggle Stars Off"
-
-
-
-
+              
 #------------------------------------------UI SECTION------------------------------------------#
 ###A E S T H E T I C S###
 w.configure(background="Black")
 b1 = w.create_rectangle(1001,0,1205,1000,fill="white")
 
-playp = Button(master,text="▐▐  ", command =lambda:playpause(False),font=("Helvetica", 12))
+playp = Button(master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
 playp.place(x=1100,y=5,width=30,height=30)
 
 trailbutton = Button(master, text="Toggle Trail off", command=lambda: trailtoggle(currr))
@@ -414,7 +422,6 @@ w.create_text(1065,267,text= "Density",font=("Helvetica",10))
 Density = Entry(master,width=6, textvariable=density)
 Density.place(x=1100,y = 260)
 
-
 ###    TITLE    ###
 
 for alpha in range (65,91): alphabet.append(chr(alpha))  #something like that
@@ -437,21 +444,24 @@ w.bind("<Button-1>",clickfunct) #initial click
 w.bind("<B1-Motion>",motion) #click and drag
 w.bind("<ButtonRelease-1>",release) #release of click
 while True:
-    if paused == False:
+    if paused != True:
            colour = toggle()
-           if colour != "White":
-                  colour = toggle()
-           try:
-                  w.itemconfig(curtime,text=("Time",round(time.time() - starttime,2)))
-           except TclError:
-                  pass
+           if colour != "White": colour = toggle()
+           try: w.itemconfig(curtime,text=("Time",round(time.time() - starttime,2)))
+           except TclError: pass
            otime = time.time()
            main()
-           try:
-                  w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
-           except ZeroDivisionError:
-                  pass
-           w.lower("trail")
-    else:
-           pass
-    w.update()
+           try: w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
+           except ZeroDivisionError: pass
+           w.lower("t")
+           w.update()
+           if tbp == True or tbpc == True:
+                  if tbpc == True:
+                         playpause(True)
+                         askcolour(prevpaused)
+                         playpause(False)
+                         tbpc = False
+                  else: playpause(False)
+    else: w.update()
+           
+    
