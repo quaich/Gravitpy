@@ -70,12 +70,9 @@ Collums of OBJECTS:
 15 = prev time
 16 = theta
 """
-safetopause = False
 tbp = False
 tbpc = False
 def main():
-       global safetopause
-       safetopause = False
        if currr > 1:
                for mainl in range(0,currr): #for more than one object
                    if mainl not in exclude:
@@ -95,7 +92,6 @@ def main():
                            OBJECTS[mainl][8] = objectxy [0]
                            OBJECTS[mainl][9] = objectxy [1]
        if currr == 1: solo(0)
-       safetopause = True
 def solo(no):
         x = ((OBJECTS[no][0]+OBJECTS[no][2])/2)
         y = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
