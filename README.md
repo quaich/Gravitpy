@@ -1,7 +1,8 @@
-# GravitPY
-Python3.5 Celestial simulation.
+# GravitPY - Python 3.5 2D Celestial simulation.
 
-As of now the programs were written as fast as possible (without due care to formating) to get a working proof of concept.
+Created for my A-Level edexcel Computer Science coursework.
 
-Created for my A-Level computing coursework.
+Please bear with me as this is my first major Programming project!
 
+# How it currently looks (15 Jan 2016)
+![currentversion example](https://i.gyazo.com/507e0df125d25f5ed5094551d3318963.png)
