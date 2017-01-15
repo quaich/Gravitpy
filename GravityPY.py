@@ -3,9 +3,9 @@
 #1.Work on different intergration methods such as RK4 and Verlet.
 #2:Create solar systems to higlight proof of concept.
 #2.Do anything else that was highlighted on my initial objectives.
-#3.Code efficiency/OOP approach to program,
-#4.increase radius of planets as they consume
-
+#3.Code efficiency/OOP approach to program.
+#4.increase radius of planets as they consume.
+#5.Code spring cleaning.
 #setup
 #Importing modules
 from tkinter import * #enables use of the Tkinter UI, responsible for drawing of objects and generation of GUI
@@ -19,38 +19,31 @@ import datetime #for delta time calculations
 #many of these variables can easily be locatlised.
 master = Tk() #master window
 alphabet=[]
-w = Canvas(master, width=1200, height=1000) #generate 1000x1000 canvas
+w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
 #master.iconbitmap("icon.ico")
 currr = 0 #The row number in the 2d array "OBJECTS" that is avalible for use.
-rad = 0 #radius
-numberofplanets=0 #duh
 xforce = 0
 yforce = 0
-planets = 0
-list1 = 0
-lines = True
-xn = True
-yn = True
-trail = True
-debug = False
+speed = 0.001
+
+trail = False
 starttime = time.time()
 lasttime = starttime
-#constants
-G = 6.673 #simplfied
-objectxy = []
-ox = 0
-oy = 0
-#2d arrays
 paused = False
 prevpaused = False
-OBJECTS = [["n" for x in range(17)] for y in range(100)]#(Y,X) #2d array for planet variables
-exclude = [] #temporary mesure
 disco = False
 imported = False
 planetcolour = ((255,0,0),"#FF0000")
-"""
+planetselected = 0
+#constants
+G = 6.673 #simplfied
+#2d arrays
+OBJECTS = [["n" for x in range(18)] for y in range(200)]#(Y,X) #2d array for planet variables
+exclude = [] #temporary mesure
+
+""" This is the worst way of doing this. I know OOP is a thing but that doesn't matter right now
 Collums of OBJECTS:
 0 = The x0
 1 = The y0
@@ -67,8 +60,9 @@ Collums of OBJECTS:
 12 = G
 13 = B
 14 = Physical representation of the Planet on the plane
-15 = prev time
+15 = time alive
 16 = theta
+17 = number of planets devoured
 """
 tbp = False
 tbpc = False
@@ -84,15 +78,14 @@ def main():
                                     alone = False
                                     break
                            x+=1
-                       if alone == True: solo(mainl)
+                       if alone == True: solo(mainl,trail)
                        if OBJECTS[mainl][0] != "n" and OBJECTS[mainl][0] != "d":
-                           list1 = (OBJECTS[mainl][0],OBJECTS[mainl][1],OBJECTS[mainl][2],OBJECTS[mainl][3])
                            objectxy = [((OBJECTS[mainl][0]+OBJECTS[mainl][2])/2),((OBJECTS[mainl][1]+OBJECTS[mainl][3])/2)]
-                           calculatedeltaXY(currr,G,objectxy,list1,mainl,exclude)
+                           calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed)
                            OBJECTS[mainl][8] = objectxy [0]
                            OBJECTS[mainl][9] = objectxy [1]
-       if currr == 1: solo(0)
-def solo(no):
+       if currr == 1: solo(0,trail)
+def solo(no,trail):
         x = ((OBJECTS[no][0]+OBJECTS[no][2])/2)
         y = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
         w.move(OBJECTS[no][14],OBJECTS[no][6],OBJECTS[no][7])
@@ -101,34 +94,35 @@ def solo(no):
         ny = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
         xy = [x,y]
         nxy = [nx,ny]
-        if trail == True: drawtrail(xy,nxy,no)
-def calculatedeltaXY(currr,G,objectxy,list1,mainl,exclude):
+        if trail == True: drawtrail(xy,nxy,no,trail)
+def calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed):
         for planets in range(0,currr):
-                if OBJECTS[planets][0] != "n" and planets not in exclude:
-                       object2xy = [((OBJECTS[planets][0]+OBJECTS[planets][2])/2),((OBJECTS[planets][1]+OBJECTS[planets][3])/2)]
-                       list2 = (OBJECTS[planets][0],OBJECTS[planets][1],OBJECTS[planets][2],OBJECTS[planets][3])
-                       if list1 == list2: continue
-                       if planets == mainl: continue
-                       ###essentialy the collision detection###
+            if OBJECTS[planets][0] != "n" and OBJECTS[planets][0] != "d" and planets not in exclude:
+                object2xy = [((OBJECTS[planets][0]+OBJECTS[planets][2])/2),((OBJECTS[planets][1]+OBJECTS[planets][3])/2)]
+                if object2xy != objectxy:
+                       ###Essentialy the collision detection###
                        if planets not in exclude and mainl not in exclude:
                            radius,theta,xn,yn = maths(objectxy,object2xy)
                            if colide(mainl,planets,radius) == True:
                                   if OBJECTS[mainl][10] >= OBJECTS[planets][10]:
                                          tbd = planets
                                          OBJECTS[mainl][4] += OBJECTS[planets][4]
+                                         OBJECTS[mainl][17] += 1
                                   else:
                                          tbd = mainl
                                          OBJECTS[planets][4] += OBJECTS[mainl][4]
+                                         OBJECTS[planets][17] += 1
                                   exclude.append(tbd)
                                   w.delete(OBJECTS[tbd][14])
                                   for x in range(0,len(OBJECTS[tbd])): OBJECTS[tbd][x] = "d"
-                           ###Calc variables###
-                           ###EULER###
+
+                           ###Calculate variables###
+                                   ###EULER###
                            else:
                                   if default.get() == "Euler 8x" or default.get() == "Euler":
                                          if default.get() == "Euler": step = 0
                                          if default.get() == "Euler 4x": step = 4
-                                         Euler(objectxy,object2xy,mainl,planets,step,exclude)
+                                         Euler(objectxy,object2xy,mainl,planets,step,exclude,OBJECTS,speed)
                                   if default.get() == "Trapezium": Trapeziumrule(objectxy,object2xy)
                                   if default.get() == "Verlet": xforce,yforce = Verlet(yn,xn,yforce,xforce,force,theta,step,planets)
                                   if default.get() == "Runge-Kutta": Runge()
@@ -151,54 +145,38 @@ def maths(objectxy,object2xy):
         if a > 0: xn = True
         else: xn = False
         return(radius,theta,xn,yn)
-
-def physics(mainl,planets,objectxy,object2xy,step,exclude):
+def physics(mainl,planets,objectxy,object2xy,step,exclude,OBJECTS,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
-       if radius == 0: pass
+       if radius == 0: pass #no div by 0
        Fgrav = ((G*(int(OBJECTS[mainl][4])*(int(OBJECTS[planets][4]))))/radius**2) / OBJECTS[mainl][4]
-       if xn == True: accelerationx = -(Fgrav*math.cos(theta))
-       else: accelerationx = Fgrav*math.cos(theta)
+       if xn == True:accelerationx = -(Fgrav*math.cos(theta))
+       else:accelerationx = Fgrav*math.cos(theta)
        if yn == True: accelerationy = -(Fgrav*math.sin(theta))
        else: accelerationy = Fgrav*math.sin(theta)
-       currenttime = time.time() - otime
+       cspeed = speed.get()
        #Resolving (Right) (positive x)
-       vx = accelerationx*currenttime / (step+1)
-       vy = accelerationy*currenttime / (step+1)
+       vx = accelerationx*cspeed / (step+1)
+       vy = accelerationy*cspeed / (step+1)
        #Resolving (Down) (positive y)
        return(vx,vy)
 
-def Euler(objectxy,object2xy,mainl,planets,step,exclude):
+def Euler(objectxy,object2xy,mainl,planets,step,exclude,OBJECTS,speed):
        prevxy = objectxy
        for hop in range(0,step+1):
-              vx,vy = physics(mainl,planets,objectxy,object2xy,step,exclude)
+              vx,vy = physics(mainl,planets,objectxy,object2xy,step,exclude,OBJECTS,speed)
               OBJECTS[mainl][6] += vx
               OBJECTS[mainl][7] += vy
-              w.move(OBJECTS[mainl][14],OBJECTS[mainl][6],OBJECTS[mainl][7])
-              OBJECTS[mainl][0],OBJECTS[mainl][1],OBJECTS[mainl][2],OBJECTS[mainl][3] = w.coords(OBJECTS[mainl][14])
-              objectxy = [((OBJECTS[mainl][0]+OBJECTS[mainl][2])/2),((OBJECTS[mainl][1]+OBJECTS[mainl][3])/2)]
-       if trail == True: drawtrail(prevxy,objectxy,mainl)
+       #if trail == True: drawtrail(prevxy,objectxy,mainl)
        colour = toggle()
        if colour != "White":
               w.itemconfig(OBJECTS[mainl][14],fill = colour)
               colour = toggle()
               OBJECTS[mainl][5] = colour
-       w.update()
-def createplanet(rad,mass,x,y,R,G,B,cx,cy):
+
+def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global planetcolour
     global currr
-    OBJECTS[currr][0] = x-rad
-    OBJECTS[currr][1] = y-rad
-    OBJECTS[currr][2] = x+rad
-    OBJECTS[currr][3] = y+rad
-    OBJECTS[currr][4] = mass
-    OBJECTS[currr][6] = cx
-    OBJECTS[currr][7] = cy
-    OBJECTS[currr][8] = x
-    OBJECTS[currr][9] = y
-    OBJECTS[currr][10] = rad
-    OBJECTS[currr][11] = R
-    OBJECTS[currr][12] = G
-    OBJECTS[currr][13] = B
+    OBJECTS[currr] = [x-rad,y-rad,x+rad,y+rad,mass,0,cx,cy,x,y,rad,R,G,B,0,time.time(),theta,0]
     colour = toggle()
     if imported == True: colour = '#%02x%02x%02x' % ((int(OBJECTS[currr][11]//1), int(OBJECTS[currr][12]//1), int(OBJECTS[currr][13]//1)))
     if colour == "White": OBJECTS[currr][5] = planetcolour[1]
@@ -207,7 +185,7 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy):
     currr +=1
     w.lower("oval")
     w.lower("star")
-    w.update()
+
 
 def colide(mainl,planets,radius):
     if radius < OBJECTS[mainl][10]:
@@ -223,23 +201,21 @@ def fml():
 	global disco
 	disco = not disco
 	w.configure(background="Black")
-def trailtoggle(currr):
+def trailtoggle():
     global trail
-    if trail == True:
-           w.delete()
-           trailbutton["text"] = "Toggle Trail on"
-           w.delete("t")
-    else: trailbutton["text"] = "Toggle Trail off"
+    if trailbutton["text"] == "Toggle trail on":
+           trailbutton["text"] = "Toggle trail off"
+    else:
+           trailbutton["text"] = "Toggle trail on"
     trail = not trail
 
-def drawtrail(prevxy,objectxy,mainl):
+
+def drawtrail(prevxy,objectxy,mainl,planetcolour):
        if trail == True:
            colour = toggle()
            if colour == "White":
-                global planetcolour
                 colour = planetcolour [1]
-           w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBJECTS[mainl][5],tags="t",)
-       w.lower("t")
+           w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBJECTS[mainl][5])
 
 def playpause(colourc):
        global paused
@@ -253,7 +229,7 @@ def playpause(colourc):
            else: playp["text"] = "▐▐  "
            paused = not paused
        w.update()
-       
+
 def safetypause(colourc):
        global tbp
        if paused == True:
@@ -263,18 +239,25 @@ def safetypause(colourc):
 def clickfunct(event):
        global ox
        global oy
+       global mass
+       global density
+       global planetcolour
+       nmass = int(mass.get())
+       ndensity = int(density.get())
        if event.x < 1000:
               ox = event.x
               oy = event.y
-              w.create_oval(event.x+2,event.y+2,event.x-2,event.y-2,fill="#FF00EA",tags="shot")
+              w.create_oval(event.x+(nmass/ndensity),event.y+(nmass/ndensity),event.x-(nmass/ndensity),event.y-(nmass/ndensity),fill=planetcolour[1],tags="shotoval")
 
 def motion(event):
        w.delete("shot")
+       global planetcolour
        colour = toggle()
-       if colour == "White": colour = "Blue"
-       w.create_line(ox,oy,event.x,event.y,fill=colour,tags="shot")
-
+       if colour == "White": colour = planetcolour[1]
+       if event.x < 1000:
+              w.create_line(ox,oy,event.x,event.y,fill=colour,tags="shot")
 def release(event):
+    if event.x < 1000:
        global planetcolour
        x = event.x
        y = event.y
@@ -290,8 +273,8 @@ def release(event):
        rad,theta,xneg,yneg= maths(start,end)
        vx = cx/((lmass)*5)
        vy = cy/((lmass)*5)
-       createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy)
-
+       createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy,theta)
+    w.delete("shotoval")
 def toggle():
      if disco == True: return('#%02x%02x%02x' % (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
      else: return("White")
@@ -309,114 +292,169 @@ def askcolour(prevpaused):
        global planetcolour
        planetcolour = askcolor()
 def startoggle(): #make these shift all in one direction at some point
-    if stary["text"] == "Toggle Stars Off":
+    if stary["text"] == "Toggle Stars off":
         w.delete("star")
-        stary["text"] = "Toggle Stars On"
+        stary["text"] = "Toggle Stars on"
     else:
         for i in range(0,1000):
             for x in range(0,1): #make this variable
                 ran = random.randint(0,1000)
                 w.create_oval(ran,i,ran,i,outline="White",tags="star")
         w.lower("star")
-        stary["text"] = "Toggle Stars Off"
-        
+        stary["text"] = "Toggle Stars off"
+
 ###LOAD AND SAVE SYSTEM###
 def load():
+       global currr
        global imported
        global OBJECTS
-       imported = True
+       global exclude
        file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
+       currr = 0
+       imported = True
+       exclude = []
        with open(file,'r') as load:
-             y = 0
              for dely in range(0,len(OBJECTS)):
                     for delx in range(0,len(OBJECTS[dely])):
                            OBJECTS[dely][delx] = "n"
              lines = [line.split() for line in load]
              OBJECTS = lines
-             w.delete("oval","t")
-             for x in lines:
-                     try: OBJECTS[y][0] = float(OBJECTS[y][0])
-                     except: break
-                     OBJECTS[y][1] = float(OBJECTS[y][1])
-                     OBJECTS[y][2] = float(OBJECTS[y][2])
-                     OBJECTS[y][3] = float(OBJECTS[y][3])
-                     OBJECTS[y][4] = float(OBJECTS[y][4])
-                     OBJECTS[y][6] = float(OBJECTS[y][6])
-                     OBJECTS[y][7] = float(OBJECTS[y][7])
-                     OBJECTS[y][8] = float(OBJECTS[y][8])
-                     OBJECTS[y][9] = float(OBJECTS[y][9])
-                     OBJECTS[y][10] = float(OBJECTS[y][10])
-                     OBJECTS[y][11] = float(OBJECTS[y][11])
-                     OBJECTS[y][12] = float(OBJECTS[y][12])
-                     OBJECTS[y][13] = float(OBJECTS[y][13])
-                     try:
-                            OBJECTS[y][15] = float(OBJECTS[y][15])
-                            OBJECTS[y][16] = float(OBJECTS[y][16])
-                     except: pass
-                     y+=1
+             w.delete("oval")
+             for y in range(0,len(OBJECTS)):
+                     if OBJECTS[y][0] == "n": break
+                     for x in range(0,18):
+                            try: OBJECTS[y][x] = float(OBJECTS[y][x])
+                            except: pass
              OBJECTS = lines
        i = 0
-       for lines in OBJECTS:
-            if OBJECTS[i][0] == "n":
-                     global currr
-                     currr = i
+       for lines in range(0,len(OBJECTS)):
+            print(lines)
+            if OBJECTS[lines][0] == "n":
+                     currr = lines
                      break
-            createplanet(OBJECTS[i][10],OBJECTS[i][4],((OBJECTS[i][0]+OBJECTS[i][2])/2),((OBJECTS[i][1]+OBJECTS[i][3])/2),OBJECTS[i][11],OBJECTS[i][12],OBJECTS[i][13],OBJECTS[i][6],OBJECTS[i][7])
-            i += 1
+            if OBJECTS[lines][0] != "d": createplanet(OBJECTS[lines][10],OBJECTS[lines][4],((OBJECTS[lines][0]+OBJECTS[lines][2])/2),((OBJECTS[lines][1]+OBJECTS[lines][3])/2),OBJECTS[lines][11],OBJECTS[lines][12],OBJECTS[lines][13],OBJECTS[lines][6],OBJECTS[lines][7],0)
 def save():
        file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save")
        for lines in OBJECTS:
               for entity in lines:
                      file.write(str(entity))
                      file.write(" ")
+                     if lines[0] == "n": break
               file.write("\n")
-              
+       file.close()
+
+def selectobject(event):
+       x = event.x
+       y = event.y
+       closest = w.find_closest(x,y)
+       try:
+              if w.gettags(closest)[0] == "oval":
+                     coords = w.coords(closest)
+                     for i in range(0,currr):
+                            if coords == [OBJECTS[i][0],OBJECTS[i][1],OBJECTS[i][2],OBJECTS[i][3]]:
+                                         global planetselected
+                                         planetselected = i
+              else: print("There's no planets around here!")
+       except: pass
+
 #------------------------------------------UI SECTION------------------------------------------#
-###A E S T H E T I C S###
 w.configure(background="Black")
 b1 = w.create_rectangle(1001,0,1205,1000,fill="white")
 
 playp = Button(master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
-playp.place(x=1100,y=5,width=30,height=30)
+playp.place(x=1150,y=5,width=30,height=30)
 
-trailbutton = Button(master, text="Toggle Trail off", command=lambda: trailtoggle(currr))
-trailbutton.place(x=1090,y=100,width=120)
+trailbutton = Button(master, text="Toggle Trail on", command=trailtoggle)
+trailbutton.place(x=1040,y=120,width=120)
 
 discotrail = Button(master,command=fml)
 discotrail.place(x=1190,y=0,width=10,height=10)
 
 colourchoose = Button(master,text="Select colour",command=lambda:getcolour(prevpaused))
-colourchoose.place(x=1090,y=160,width = 120)
+colourchoose.place(x=1040,y=300,width = 120)
 
 
 loadfunct = Button(master,text="Load file",command=load)
-loadfunct.place(x=1010,y=160,width=80)
+loadfunct.place(x=1060,y=415,width=80)
 
 savefunct = Button(master,text="Save file",command=save)
-savefunct.place(x=1010,y=130,width=80)
+savefunct.place(x=1060,y=385,width=80)
 
 stary = Button(master, text="Toggle Stars on", command=startoggle)
-stary.place(x=1090,y=130,width=120)
+stary.place(x=1040,y=150,width=120)
 
 curtime = w.create_text(50,30,fill = "White")
 fps =     w.create_text(150,30,fill = "White")
 ###Planet specific variables###
-b2 = w.create_rectangle(1020,200,1180,300,fill="Light Grey")
-
-w.create_text(1040,63,text="Intergration \nMethod")
-
+w.create_rectangle(1020,90,1180,190,fill="Light Grey")
+w.create_rectangle(1020,200,1180,340,fill="Light Grey")
+w.create_rectangle(1020,350,1180,450,fill="Light Grey")
+w.create_rectangle(1001,460,1250,470,fill="BLACK")
+w.create_rectangle(1020,480,1180,660,fill="Light Grey")
+w.create_text(1100,105,text="Toggle Functions",font=("Helvetica",10,"bold underline"))
+w.create_text(1100,366,text="Load and save",font=("Helvetica",10,"bold underline"))
+w.create_text(1040,63,text="Intergration \nMethod",font=("Helvetica",10))
+w.create_text(1100,215,text="Planet Properties",font=("Helvetica",10,"bold underline"))
 #Mass#
 mass = IntVar()
 mass.set(100)
-w.create_text(1060,227,text= "Mass",font=("Helvetica", 10))
-Mass = Entry(master,width=6,textvariable=mass)
-Mass.place(x=1100,y=220)
+w.create_text(1060,247,text= "Mass",font=("Helvetica", 10))
+Mass = Entry(master,width=10,textvariable=mass)
+Mass.place(x=1100,y=240)
 #Density#
 density = IntVar()
 density.set(20)
-w.create_text(1065,267,text= "Density",font=("Helvetica",10))
-Density = Entry(master,width=6, textvariable=density)
-Density.place(x=1100,y = 260)
+w.create_text(1065,277,text= "Density",font=("Helvetica",10))
+Density = Entry(master,width=10, textvariable=density)
+Density.place(x=1100,y = 270)
+
+
+#Planet variable showing#
+
+w.create_text(1100,495,text="Planet Information",font=("Helvetica",10,"bold underline"))
+
+w.create_text(1062,520,text="Velocity")
+planetvelocity = IntVar()
+showoffvelocity = Entry(master,width=6,textvariable=planetvelocity)
+showoffvelocity.place(x=1100,y=513)
+planetvelocity.set(0)
+showoffvelocity.configure(state="disabled")
+
+w.create_text(1062,550,text="Mass")
+planetmass = IntVar()
+showoffmass = Entry(master,width=6,textvariable=planetmass)
+showoffmass.place(x=1100,y=540)
+planetmass.set(0)
+showoffmass.configure(state="disabled")
+
+w.create_text(1062,572,text="Density")
+planetdensity = IntVar()
+showoffdensity = Entry(master,width=6,textvariable=planetdensity)
+showoffdensity.place(x=1100,y=567)
+planetdensity.set(0)
+showoffdensity.configure(state="disabled")
+
+w.create_text(1062,605,text="Devorered\n  planets")
+omlettedevourer = IntVar()
+showoffdevoured = Entry(master,width=6,textvariable=omlettedevourer)
+showoffdevoured.place(x=1100,y=595)
+omlettedevourer.set(0)
+showoffdevoured.configure(state="disabled")
+
+w.create_text(1062,635,text="Time alive")
+planetalivetime = IntVar()
+showoffalive = Entry(master,width=6,textvariable=planetalivetime)
+showoffalive.place(x=1100,y=625)
+planetalivetime.set(0)
+showoffalive.configure(state="disabled")
+
+
+w.create_text(1035,20,text="Force amp")
+speed = Scale(master,from_=0.001,to=0.1,resolution=0.001,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20)
+speed.place(x=1085,y=5)
+
+
+
 
 ###    TITLE    ###
 
@@ -431,14 +469,15 @@ integration = OptionMenu(master,default,"Euler","Euler 4x","Euler legacy","RK4",
 integration.config(bg = "White",bd=0,fg="BLACK",activeforeground="BLACK")
 integration["menu"].config(bg="White",fg="Black")
 integration.place(x=1085,y=50,width=105)
-###debug lines###
-#debugtoggle()
+
+##Startoggle##
 startoggle()
 #------------------------------------------UI SECTION END--------------------------------------#
 #keybinds
 w.bind("<Button-1>",clickfunct) #initial click
 w.bind("<B1-Motion>",motion) #click and drag
 w.bind("<ButtonRelease-1>",release) #release of click
+w.bind("<Button-3>",selectobject)
 while True:
     if paused != True:
            colour = toggle()
@@ -449,8 +488,6 @@ while True:
            main()
            try: w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
            except ZeroDivisionError: pass
-           w.lower("t")
-           w.update()
            if tbp == True or tbpc == True:
                   if tbpc == True:
                          playpause(True)
@@ -458,6 +495,21 @@ while True:
                          playpause(False)
                          tbpc = False
                   else: playpause(False)
-    else: w.update()
-           
+           if currr > 0 and OBJECTS[planetselected][0] != "d":
+                  planetvelocity.set(math.sqrt(((OBJECTS[planetselected][6])**2) +  ((OBJECTS[planetselected][7])**2))*100)
+                  planetmass.set(OBJECTS[planetselected][4])
+                  planetdensity.set(OBJECTS[planetselected][4] / OBJECTS[planetselected][10])
+                  planetalivetime.set(round(time.time() - OBJECTS[planetselected][15]))
+                  omlettedevourer.set(OBJECTS[planetselected][17])
+
     
+           for number in range(0,currr):
+                  if OBJECTS[number][0] != "d" and OBJECTS[number][0] != "n":
+                     w.move(OBJECTS[number][14],OBJECTS[number][6],OBJECTS[number][7])
+                     oldxy = [((OBJECTS[number][0]+OBJECTS[number][2])/2),((OBJECTS[number][1]+OBJECTS[number][3])/2)]
+                     try: OBJECTS[number][0],OBJECTS[number][1],OBJECTS[number][2],OBJECTS[number][3] = w.coords(OBJECTS[number][14])
+                     except ValueError: pass
+                     newxy = [((OBJECTS[number][0]+OBJECTS[number][2])/2),((OBJECTS[number][1]+OBJECTS[number][3])/2)]
+                     if trail==True: drawtrail(oldxy,newxy,number,planetcolour)
+    else: w.update()
+    w.update()
