@@ -1,4 +1,4 @@
-#[https://en.wikipedia.org/wiki/Pyxis](PYxis) - Python 3.5 2D Celestial simulation.
+#[PYxis](https://en.wikipedia.org/wiki/Pyxis) - Python 3.5 2D Celestial simulation.
 
 Created for my A-Level edexcel Computer Science coursework.
 
