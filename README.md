@@ -1,4 +1,4 @@
-# GravitPY - Python 3.5 2D Celestial simulation.
+# PYxis - Python 3.5 2D Celestial simulation.
 
 Created for my A-Level edexcel Computer Science coursework.
 
