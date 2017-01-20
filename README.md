@@ -1,6 +1,18 @@
-#[PYxis](https://en.wikipedia.org/wiki/Pyxis) - Python 3.5 2D Celestial simulation.
+#[PYxis](https://en.wikipedia.org/wiki/Pyxis) - Python3 2D Celestial simulation.
 
-Created for my A-Level edexcel Computer Science coursework.
+This project was created for my A-Level Edexcel Computer Science coursework.
 
-# How it currently looks (15 Jan 2017)
-![currentversion example](https://i.gyazo.com/507e0df125d25f5ed5094551d3318963.png)
+### Prerequisites
+
+```
+- Python3
+- Tkinter (included in default Python3 installation)
+```
+
+## Licence
+
+This project is licenced under the CC-BY-NC licence. See [LICENCE](LICENCE.md)
+
+## Acknowledgments
+
+[effbot](http://effbot.org/) for their great documentation of Tkinter libraries.
