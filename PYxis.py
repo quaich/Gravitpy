@@ -1,8 +1,12 @@
 #TODO
-#1.Fix load bug (fill the rest of the array after load)
-#2.Code spring cleaning.
-#3.Remake UI
+
+#2. Code spring cleaning.
+#3. Remake UI
 #4. Optimize and remove (as many as possible) globals
+
+
+
+
 #setup
 #Importing modules
 from tkinter import * #enables use of the Tkinter UI, responsible for drawing of objects and generation of GUI
@@ -12,6 +16,7 @@ import time #needed for restriction of refresh rate (may not be needed)
 import math #needed for physics calculation
 import random #for some more fun parts of the program.
 import datetime #for delta time calculations
+import platform #for os related code
 #functions and variables
 #many of these variables can easily be locatlised.
 master = Tk() #master window
@@ -19,23 +24,23 @@ alphabet=[]
 w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
-#master.iconbitmap("icon.ico")
+master.iconbitmap("icon.ico")
 currr = 0 #The row number in the 2d array "OBJECTS" that is avalible for use.
 xforce = 0
 yforce = 0
-speed = 0.001
-
+speed = 1
+tbp = False
+tbpc = False
 trail = False
 starttime = time.time()
 lasttime = starttime
 paused = False
 prevpaused = False
-disco = False
 imported = False
 planetcolour = ((255,0,0),"#FF0000")
 planetselected = 0
 #constants
-G = 6.673 #simplfied
+G = 6.6742 #simplfied
 #2d arrays
 OBJECTS = [["n" for x in range(18)] for y in range(200)]#(Y,X) #2d array for planet variables
 exclude = [] #temporary mesure
@@ -60,8 +65,7 @@ Collums of OBJECTS:
 16 = theta
 17 = number of planets devoured
 """
-tbp = False
-tbpc = False
+
 def main():
        if currr > 1:
                for mainl in range(0,currr): #for more than one object
@@ -91,6 +95,7 @@ def solo(no,trail,planetcolour):
         xy = [x,y]
         nxy = [nx,ny]
         if trail == True: drawtrail(xy,nxy,no,trail,planetcolour)
+
 def calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed):
         for planets in range(0,currr):
             if OBJECTS[planets][0] != "n" and OBJECTS[planets][0] != "d" and planets not in exclude:
@@ -132,6 +137,7 @@ def maths(objectxy,object2xy):
         if a > 0: xn = True
         else: xn = False
         return(radius,theta,xn,yn)
+
 def physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
        if radius == 0: pass #no div by 0
@@ -140,7 +146,7 @@ def physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed):
        else:accelerationx = Fgrav*math.cos(theta)
        if yn == True: accelerationy = -(Fgrav*math.sin(theta))
        else: accelerationy = Fgrav*math.sin(theta)
-       cspeed = speed.get()
+       cspeed = (speed.get()/1000)
        #Resolving (Right) (positive x)
        vx = accelerationx*cspeed
        vy = accelerationy*cspeed
@@ -152,25 +158,17 @@ def Euler(objectxy,object2xy,mainl,planets,exclude,OBJECTS,speed):
        vx,vy = physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed)
        OBJECTS[mainl][6] += vx
        OBJECTS[mainl][7] += vy
-       colour = toggle()
-       if colour != "White":
-              w.itemconfig(OBJECTS[mainl][14],fill = colour)
-              colour = toggle()
-              OBJECTS[mainl][5] = colour
+
 
 def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global planetcolour
     global currr
-    OBJECTS[currr] = [x-rad,y-rad,x+rad,y+rad,mass,0,cx,cy,x,y,rad,R,G,B,0,time.time(),theta,0]
-    colour = toggle()
-    if imported == True: colour = '#%02x%02x%02x' % ((int(OBJECTS[currr][11]//1), int(OBJECTS[currr][12]//1), int(OBJECTS[currr][13]//1)))
-    if colour == "White": OBJECTS[currr][5] = planetcolour[1]
-    else: OBJECTS[currr][5] = colour
-    OBJECTS[currr][14] = w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=OBJECTS[currr][5],tags="oval")
+    OBJECTS[currr][11],OBJECTS[currr][12],OBJECTS[currr][13] = R,G,B
+    OBJECTS[currr] = [x-rad,y-rad,x+rad,y+rad,mass,'#%02x%02x%02x' % ((int(OBJECTS[currr][11]//1), int(OBJECTS[currr][12]//1), int(OBJECTS[currr][13]//1))),cx,cy,x,y,rad,R,G,B,0,time.time(),theta,0]
+    OBJECTS[currr][14] = w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=(OBJECTS[currr][5]),tags="oval")
     currr +=1
     w.lower("oval")
     w.lower("star")
-
 
 def colide(mainl,planets,radius):
     if radius < OBJECTS[mainl][10]:
@@ -182,28 +180,22 @@ def colide(mainl,planets,radius):
     else: return False
 
 ###UI Related subroutines###
-def fml():
-	global disco
-	disco = not disco
-	w.configure(background="Black")
+
 def trailtoggle():
     global trail
-    if trailbutton["text"] == "Toggle Trail on":
-           trailbutton["text"] = "Toggle Trail off"
-    else:
-           trailbutton["text"] = "Toggle Trail on"
+    if trailbutton["text"] == "Toggle Trail on": trailbutton["text"] = "Toggle Trail off"
+    else: trailbutton["text"] = "Toggle Trail on"
     trail = not trail
 
 
 def drawtrail(prevxy,objectxy,mainl,trail,planetcolour):
        global trailduration
        if trail == True:
-           colour = toggle()
-           if colour == "White":
-                colour = planetcolour [1]
+           colour = planetcolour [1]
            trail = w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBJECTS[mainl][5],tags="t")
-           if trailduration.get() != 0:
-                  master.after(int((trailduration.get())*1000),lambda:w.delete(trail))
+           w.lower(trail)
+           if trailduration.get() != 0: master.after(int((trailduration.get())*1000),lambda:w.delete(trail))
+
 def playpause(colourc):
        global paused
        if colourc == True:
@@ -223,6 +215,7 @@ def safetypause(colourc):
               playpause(colourc)
               tbp = False
        else: tbp = True
+
 def clickfunct(event):
        global ox
        global oy
@@ -239,10 +232,10 @@ def clickfunct(event):
 def motion(event):
        w.delete("shot")
        global planetcolour
-       colour = toggle()
-       if colour == "White": colour = planetcolour[1]
+       colour = planetcolour[1]
        if event.x < 1000:
               w.create_line(ox,oy,event.x,event.y,fill=colour,tags="shot")
+
 def release(event):
     if event.x < 1000:
        global planetcolour
@@ -262,9 +255,7 @@ def release(event):
        vy = cy/((lmass)*5)
        createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy,theta)
     w.delete("shotoval")
-def toggle():
-     if disco == True: return('#%02x%02x%02x' % (random.randint(0,255),random.randint(0,255),random.randint(0,255)))
-     else: return("White")
+
 def getcolour(prevpaused):
     global paused
     global planetcolour
@@ -278,6 +269,7 @@ def getcolour(prevpaused):
 def askcolour(prevpaused):
        global planetcolour
        planetcolour = askcolor()
+
 def startoggle(): #make these shift all in one direction at some point
     if stary["text"] == "Toggle Stars off":
         w.delete("star")
@@ -292,39 +284,48 @@ def startoggle(): #make these shift all in one direction at some point
 
 ###LOAD AND SAVE SYSTEM###
 def load():
-       global currr
-       global imported
-       global OBJECTS
-       global exclude
-       file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
-       systemname = ("Gravitpy - System: {}".format(file))
-       master.wm_title(systemname)
-       currr = 0
-       imported = True
-       exclude = []
-       w.delete("t")
+    #variables to be edited#
+    global currr
+    global imported
+    global OBJECTS
+    global exclude
+    file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
+    try:
        with open(file,'r') as load:
+             ##Reset Variables##
+             systemname = ("PYxis - System: {}".format(file))
+             master.wm_title(systemname)
+             currr = 0
+             imported = True
+             exclude = []
+             w.delete("t")
+             ###Delete array###
              for dely in range(0,len(OBJECTS)):
                     for delx in range(0,len(OBJECTS[dely])):
                            OBJECTS[dely][delx] = "n"
+             ###set array to the file###
              lines = [line.split() for line in load]
-             OBJECTS = lines
+             for line in range(0,len(lines)):
+                    if len(lines) < line:
+                          OBJECTS[line] = ["n" for i in range(len(OBJECTS[1]))]
+                    else: OBJECTS[line] = lines[line]
              w.delete("oval")
+             ###convert to float###
              for y in range(0,len(OBJECTS)):
                      if OBJECTS[y][0] == "n": break
                      for x in range(0,18):
                             try: OBJECTS[y][x] = float(OBJECTS[y][x])
                             except: pass
-             OBJECTS = lines
-       i = 0
        for lines in range(0,len(OBJECTS)):
-            print(lines)
-            if OBJECTS[lines][0] == "n":
-                     currr = lines
-                     break
-            if OBJECTS[lines][0] != "d": createplanet(OBJECTS[lines][10],OBJECTS[lines][4],((OBJECTS[lines][0]+OBJECTS[lines][2])/2),((OBJECTS[lines][1]+OBJECTS[lines][3])/2),OBJECTS[lines][11],OBJECTS[lines][12],OBJECTS[lines][13],OBJECTS[lines][6],OBJECTS[lines][7],0)
+            currr = lines
+            if OBJECTS[lines][0] == "n": break
+            if OBJECTS[lines][1] != "d":
+                   createplanet(OBJECTS[lines][10],OBJECTS[lines][4],((OBJECTS[lines][0]+OBJECTS[lines][2])/2),((OBJECTS[lines][1]+OBJECTS[lines][3])/2),OBJECTS[lines][11],OBJECTS[lines][12],OBJECTS[lines][13],OBJECTS[lines][6],OBJECTS[lines][7],0)
+    except FileNotFoundError:
+              print("No file was found.")
+
 def save():
-       file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save")
+       file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
        for lines in OBJECTS:
               for entity in lines:
                      file.write(str(entity))
@@ -348,6 +349,7 @@ def selectobject(event):
        except: pass
 def deltrail():
        w.delete("t")
+
 #------------------------------------------UI SECTION------------------------------------------#
 w.configure(background="Black")
 b1 = w.create_rectangle(1001,0,1205,1000,fill="white")
@@ -357,9 +359,6 @@ playp.place(x=1150,y=5,width=30,height=30)
 
 trailbutton = Button(master, text="Toggle Trail on", command=trailtoggle)
 trailbutton.place(x=1040,y=120,width=120)
-
-discotrail = Button(master,command=fml)
-discotrail.place(x=1190,y=0,width=10,height=10)
 
 colourchoose = Button(master,text="Select colour",command=lambda:getcolour(prevpaused))
 colourchoose.place(x=1040,y=300,width = 120)
@@ -378,7 +377,9 @@ stary.place(x=1040,y=150,width=120)
 
 curtime = w.create_text(50,30,fill = "White")
 fps =     w.create_text(150,30,fill = "White")
+
 ###Planet specific variables###
+
 w.create_rectangle(1020,90,1180,190,fill="Light Grey")
 w.create_rectangle(1020,200,1180,340,fill="Light Grey")
 w.create_rectangle(1020,350,1180,450,fill="Light Grey")
@@ -408,9 +409,9 @@ Density.place(x=1100,y = 270)
 
 trailduration = IntVar()
 trailduration.set(0)
-w.create_text(1065,677,text="Trail duration\n(0 = forever)",font=("Helvetica",10))
+w.create_text(1100,687,text="Trail duration\n(0 = forever)",font=("Helvetica",10))
 trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL)
-trailduration.place(x=1100,y=670)
+trailduration.place(x=1050,y=710)
 #Planet variable showing#
 
 w.create_text(1100,495,text="Planet Information",font=("Helvetica",10,"bold underline"))
@@ -437,10 +438,10 @@ planetdensity.set(0)
 showoffdensity.configure(state="disabled")
 
 w.create_text(1062,605,text="Devorered\n  planets")
-omlettedevourer = IntVar()
-showoffdevoured = Entry(master,width=6,textvariable=omlettedevourer)
+planetsdevoured = IntVar()
+showoffdevoured = Entry(master,width=6,textvariable=planetsdevoured)
 showoffdevoured.place(x=1100,y=595)
-omlettedevourer.set(0)
+planetsdevoured.set(0)
 showoffdevoured.configure(state="disabled")
 
 w.create_text(1062,635,text="Time alive")
@@ -451,7 +452,7 @@ planetalivetime.set(0)
 showoffalive.configure(state="disabled")
 
 w.create_text(1035,20,text="Force amp")
-speed = Scale(master,from_=0.001,to=0.1,resolution=0.001,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20)
+speed = Scale(master,from_=1,to=100,resolution=1,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20)
 speed.place(x=1085,y=5)
 
 ###    TITLE    ###
@@ -468,16 +469,17 @@ w.bind("<Button-1>",clickfunct) #initial click
 w.bind("<B1-Motion>",motion) #click and drag
 w.bind("<ButtonRelease-1>",release) #release of click
 w.bind("<Button-3>",selectobject)
+
+
 while True:
     if paused != True:
-           colour = toggle()
-           if colour != "White": colour = toggle()
-           try: w.itemconfig(curtime,text=("Time",round(time.time() - starttime,2)))
-           except TclError: pass
+           w.itemconfig(curtime,text=("Time",round(time.time() - starttime,2)))
            otime = time.time()
            main()
            try: w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
-           except ZeroDivisionError: pass
+           except ZeroDivisionError: pass #if the time change is too low
+
+           ##Pause safely##
            if tbp == True or tbpc == True:
                   if tbpc == True:
                          playpause(True)
@@ -485,12 +487,15 @@ while True:
                          playpause(False)
                          tbpc = False
                   else: playpause(False)
+           ##Selected planet attributes##
            if currr > 0 and OBJECTS[planetselected][0] != "d":
                   planetvelocity.set(math.sqrt(((OBJECTS[planetselected][6])**2) +  ((OBJECTS[planetselected][7])**2))*100)
                   planetmass.set(OBJECTS[planetselected][4])
                   planetdensity.set(OBJECTS[planetselected][4] / OBJECTS[planetselected][10])
                   planetalivetime.set(round(time.time() - OBJECTS[planetselected][15]))
-                  omlettedevourer.set(OBJECTS[planetselected][17])
+                  planetsdevoured.set(OBJECTS[planetselected][17])
+            ##Move the planets in time with the rest of the program.##
+           #I decided not to function this to save on calling globals##
            for number in range(0,currr):
                   if OBJECTS[number][0] != "d" and OBJECTS[number][0] != "n":
                      w.move(OBJECTS[number][14],OBJECTS[number][6],OBJECTS[number][7])
