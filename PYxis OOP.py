@@ -38,9 +38,7 @@ paused = False
 prevpaused = False
 imported = False
 planetcolour = ((255,0,0),"#FF0000")
-planetselected = 0
 #constants
-G = 6.6742 #simplfied
 #2d arrays
 OBJECTS = [["n" for x in range(18)] for y in range(200)]#(Y,X) #2d array for planet variables
 exclude = [] #temporary mesure
@@ -67,8 +65,12 @@ Collums of OBJECTS:
 """
 
 
-class planet:
+
+planetdict = {}
+currentpos = 0
+class planet():
     def __init__(self,x,y,xx,yy,mass,cstring,vx,vy,lx,ly,rad,R,G,B,atime,nom):
+        self.count = 0
         self.x = x
         self.y = y
         self.xx = xx
@@ -85,10 +87,51 @@ class planet:
         self.green = G
         self.alivetime = atime
         self.devoured = nom
+        self.represent = 0
+        self.create()
     def create(self):
-        self.planet = w.create_oval(self.x,self.y,self.xx,self.yy,fill=self.colours,tags="p")
+        self.represent = w.create_oval(self.x,self.y,self.xx,self.yy,fill=self.colours,tags="p")
         w.lower("p")
-#    OBJECTS[currr][14] = w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=(OBJECTS[currr][5]),tags="oval")
+
+class calculations():
+    def maths(self,objectxy,object2xy,ere):
+        a = int(objectxy[0] - object2xy[0])
+        b = int(objectxy[1] - object2xy[1])
+        xn,yn = False,False
+        radius = math.sqrt(a**2 + b**2)
+        if radius != 0:
+            if a == 0:
+                theta = 0
+            else:
+                theta = abs(math.atan(b/a))
+        else:
+            theta = 0
+            radius = 1
+        if ere != False:
+            if b > 0:
+                yn = True
+            else:
+                yn = False
+            if a > 0:
+                xn = True
+            else:
+                xn = False
+            return(radius,theta,xn,yn)
+        else:
+            return(radius,theta)
+    def physics(self,objectxy,object2xy):
+        G = 6.6742
+        radius,theta,xn,yn = self.maths(objectxy,object2xy,False)
+        Fgrav = ((G*(int(mass1)*(int(mass2))))/radius**2) / mass1
+        if xn == True:
+            accelerationx = -Fgrav*math.cos(theta)
+        else:
+            accelerationx = Fgrav*math.cos(theta)
+        if yn == True:
+            accelerationy = -Fgrav*math.sin(theta)
+        else:
+            accelerationy = Fgrav*math.sin(theta)
+        cspeed = int(uiinstance.speed.get())
 
 
 
@@ -98,14 +141,171 @@ class planet:
 
 
 
+class ui():
+    def __init__(self):
+        #Count for the total number of planets (replacement to currr).
+        self.planetcount = 0
+
+        #Values from the UI.
+        self.colour = ((255,0,0),"#FF0000")
+        self.density = 20
+
+        #state of the program.
+        self.paused = False
+
+        #Default positional stance.
+        self.ox = 0
+        self.oy = 0
+
+        #UI elements:
+        #Button to play and pause the program.
+        self.playpause =  Button(master,text="▐▐  ", command =lambda:self.safetypause(False),font=("Helvetica", 12))
+        self.playpause.place(x=1150,y=5,width=30,height=30)
+
+        #Button to load a file.
+        self.loadbutton = Button(master,text="Load file",command=fileop.load)
+        self.loadbutton.place(x=1060,y=415,width=80)
+
+        #Button to save a file.
+        self.savebutton = Button(master,text="Save file",command=fileop.save)
+        self.savebutton.place(x=1060,y=385,width=80)
+
+        #button to Toggle the Stars.
+        self.starbutton = Button(master, text="Toggle Stars on", command=self.startoggle)
+        self.stary.place(x=1040,y=150,width=120)
+
+        #Text for running time and frames per second.
+        self.runningtime = w.create_text(50,30,fill = "White")
+        self.fps = w.create_text(150,30,fill="White")
+
+        #Input for mass.
+
+        self.mass = IntVar()
+        self.mass.set(100) #Defualt mass
+        w.create_text(1060,247,text= "Mass",font=("Helvetica", 10))
+        self.Mass = Entry(master,width=10,textvariable=mass)
+        self.Mass.place(x=1100,y=240)
+
+        #Input for density
+
+        self.density = IntVar()
+        self.density.set(20) #Default density
+        w.create_text(1065,277,text= "Density",font=("Helvetica",10))
+        self.Density = Entry(master,width=10, textvariable=density)
+        self.Density.place(x=1100,y=270)
+
+        #Trail duration slider
+
+        self.trailduration = IntVar()
+        self.trailduration.set(0)
+        w.create_text(1065,677,text="Trail duration\n(0 = ∞)",font=("Helvetica",10))
+        self.trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL)
+        self.trailduration.place(x=1100,y=670)
+
+        #Planetary variables
+
+        w.create_text(1100,495,text="Planet Information",font=("Helvetica",10,"bold underline"))
+
+        w.create_text(1062,520,text="Velocity")
+        self.planetvelocity = IntVar()
+        self.showoffvelocity = Entry(master,width=6,textvariable=planetvelocity)
+        self.showoffvelocity.place(x=1100,y=513)
+        self.planetvelocity.set(0)
+        self.showoffvelocity.configure(state="disabled")
+
+        w.create_text(1062,550,text="Mass")
+        self.planetmass = IntVar()
+        self.showoffmass = Entry(master,width=6,textvariable=planetmass)
+        self.showoffmass.place(x=1100,y=540)
+        self.planetmass.set(0)
+        self.showoffmass.configure(state="disabled")
+
+        w.create_text(1062,572,text="Density")
+        self.planetdensity = IntVar()
+        self.showoffdensity = Entry(master,width=6,textvariable=planetdensity)
+        self.showoffdensity.place(x=1100,y=567)
+        self.planetdensity.set(0)
+        self.showoffdensity.configure(state="disabled")
+
+        w.create_text(1062,605,text="Devorered\n  planets")
+        self.planetsdevoured = IntVar()
+        self.showoffdevoured = Entry(master,width=6,textvariable=planetsdevoured)
+        self.showoffdevoured.place(x=1100,y=595)
+        self.planetsdevoured.set(0)
+        self.showoffdevoured.configure(state="disabled")
+
+        w.create_text(1062,635,text="Time alive")
+        self.planetalivetime = IntVar()
+        self.showoffalive = Entry(master,width=6,textvariable=planetalivetime)
+        self.showoffalive.place(x=1100,y=625)
+        self.planetalivetime.set(0)
+        self.showoffalive.configure(state="disabled")
+
+        w.create_text(1035,20,text="Force amp")
+        self.speed = Scale(master,from_=1,to=100,resolution=1,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20)
+        self.speed.place(x=1085,y=5)
+
+        #start with stars
+        self.startoggle()
+    def initialclick(self,event):
+        x = event.x
+        y = event.y
+        self.intmass = int(mass.get())
+        self.intden = int(density.get())
+        if event.x < 1000:
+            self.ox = event.x
+            self.oy = event.y
+            addrad = (self.intmass/self.intden)
+            w.create_oval(x+addrad,y+addrad,x-addrad,y-addrad,self.colour[1],tags="shot")
+    def motion(self,event):
+        w.delete("sline")
+        if event.x < 1000:
+            w.create_line(self.ox,self.oy,event.x,event.y,fill=self.colour,tags="sline")
+    def release(self,event):
+        if event.x < 1000:
+            lenx = event.x - self.ox
+            leny = event.y - self.oy
+            if self.mass < self.den:
+                self.mass = self.den * 2
+            radius = self.mass / self.den
+            start = [ox,oy]
+            end = [event.x,event.y]
+            rad,theta = calculations.maths(start,end,True)
+            vx = lenx/(self.intmass*5)
+            vy = leny/(self.intmass*5)
+            planetdict[self.planetcount] = planet(round(radius),self.intmass,self.ox,self.colour[0][0],self.colour[0][1],self.colour[0][2],xy,xy,theta)
+            planetincrement()
+        w.delete("sline")
+        w.delete("shot")
+    def safetypause(funct):
+        if self.paused != True:
+            tbp = True
+            self.safetypause()
+        if funct = "colour":
+            self.changecolour()
+        else:
+            pass
+    def planetincrement(self):
+        self.planetcount += 1
+    def changecolour(self):
+        if self.paused != True:
+            safetypause("colour")
+        self.colour = askcolour()
+    def move(self):
 
 
 
 
 
+#keybinds
+
+uiinstance = ui()
+
+w.bind("<Button-1>",uiinstance.initalclick) #initial click
+w.bind("<B1-Motion>",uiinstance.motion) #click and drag
+w.bind("<ButtonRelease-1>",release) #release of click
+w.bind("<Button-3>",selectobject)
 '''
-
-
 def main():
        if currr > 1:
                for mainl in range(0,currr): #for more than one object
@@ -160,23 +360,6 @@ def calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed):
                                   continue
                            Euler(objectxy,object2xy,mainl,planets,exclude,OBJECTS,speed)
 
-def maths(objectxy,object2xy):
-        a = int(objectxy[0] - object2xy[0])
-        b = int(objectxy[1] - object2xy[1])
-        xn = False
-        yn = False
-        radius = math.sqrt((a**2) + (b**2)) #Pythagorus theorem
-        if radius != 0:
-               if a == 0 : theta = 0 #change in x is 0 and we dont want an error to be thrown.
-               else: theta = abs(math.atan(b/a))
-        else: theta = 0
-        if radius == 0:
-               radius = 1
-        if b > 0: yn = True
-        else: yn = False
-        if a > 0: xn = True
-        else: xn = False
-        return(radius,theta,xn,yn)
 
 def physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
@@ -256,45 +439,6 @@ def safetypause(colourc):
               tbp = False
        else: tbp = True
 
-def clickfunct(event):
-       global ox
-       global oy
-       global mass
-       global density
-       global planetcolour
-       nmass = int(mass.get())
-       ndensity = int(density.get())
-       if event.x < 1000:
-              ox = event.x
-              oy = event.y
-              w.create_oval(event.x+(nmass/ndensity),event.y+(nmass/ndensity),event.x-(nmass/ndensity),event.y-(nmass/ndensity),fill=planetcolour[1],tags="shotoval")
-
-def motion(event):
-       w.delete("shot")
-       global planetcolour
-       colour = planetcolour[1]
-       if event.x < 1000:
-              w.create_line(ox,oy,event.x,event.y,fill=colour,tags="shot")
-
-def release(event):
-    if event.x < 1000:
-       global planetcolour
-       x = event.x
-       y = event.y
-       cx = event.x - ox
-       cy = event.y - oy
-       w.delete("shot")
-       lmass = int(mass.get())
-       ldensity = int(density.get())
-       if lmass < ldensity: lmass = ldensity *2
-       radius = lmass / ldensity
-       end = [x,y]
-       start = [ox,oy]
-       rad,theta,xneg,yneg= maths(start,end)
-       vx = cx/((lmass)*5)
-       vy = cy/((lmass)*5)
-       createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy,theta)
-    w.delete("shotoval")
 
 def getcolour(prevpaused):
     global paused
@@ -389,7 +533,7 @@ def selectobject(event):
        except: pass
 def deltrail():
        w.delete("t")
-
+'''
 #------------------------------------------UI SECTION------------------------------------------#
 w.configure(background="Black")
 b1 = w.create_rectangle(1001,0,1205,1000,fill="white")
@@ -504,11 +648,7 @@ master.wm_title(systemname)
 ##Startoggle##
 startoggle()
 #------------------------------------------UI SECTION END--------------------------------------#
-#keybinds
-w.bind("<Button-1>",clickfunct) #initial click
-w.bind("<B1-Motion>",motion) #click and drag
-w.bind("<ButtonRelease-1>",release) #release of click
-w.bind("<Button-3>",selectobject)
+
 
 
 while True:
