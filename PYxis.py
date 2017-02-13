@@ -13,22 +13,25 @@ import random #for some more fun parts of the program.
 import datetime #for delta time calculations
 #functions and variables
 #many of these variables can easily be locatlised.
+
+
 master = Tk() #master window
 alphabet=[]
 w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
 try: master.iconbitmap("icon.ico")
-except: print("Icon not found. Continuing..")
+except TclError: print("Icon not found. Continuing..")
 
 
 #constants
-G = 6.6742 #simplfied gravitational constant
-#2d arrays
+G = 6.6742 #simplfied
 
-OBJECTS = []#(Y,X) #2d array for planet variables.
-OBD = [] #2D dictionary for planet variables.
-poplist = [] #list of pointers to planes that have been destroyed (to be removed on the next refresh).
+#2d arrays
+OBJECTS = []#(Y,X) #2d array for planet variables
+OBD = [] #2D dictionary for planet variables
+poplist = []
+
 def main():
        if len(OBD) > 1:
                for mainl in range(0,len(OBD)): #for more than one object
@@ -178,7 +181,7 @@ def safetypause(colourc):
               tbp = False
        else: tbp = True
 
-def clickfunct(event):
+def clickfunct(event): 
        global ox
        global oy
        global mass
@@ -268,7 +271,7 @@ def load():
              for y in range(0,len(temparray)):
                      for x in range(len(temparray[y])):
                             try: temparray[y][x] = float(temparray[y][x])
-                            except: pass
+                        except ValueError: pass #cant convert strings to float
        for lines in range(0,len(temparray)):
             createplanet(temparray[lines][10],temparray[lines][4],((temparray[lines][0]+temparray[lines][2])/2),((temparray[lines][1]+temparray[lines][3])/2),temparray[lines][11],temparray[lines][12],temparray[lines][13],temparray[lines][6],temparray[lines][7],0)
     except FileNotFoundError:
@@ -308,7 +311,7 @@ def selectobject(event):
        try:
               if w.gettags(closest)[0] == "oval":
                      coords = w.coords(closest)
-                     for i in range(0,len(OBD) -1):
+                     for i in range(0,len(OBD)):
                             if coords == [OBD[i]["x0"],OBD[i]["y0"],OBD[i]["x1"],OBD[i]["y1"]]:
                                          global planetselected
                                          planetselected = i
@@ -333,8 +336,9 @@ lasttime = starttime
 w.configure(background="Black")#Main background
 optionsbackground = w.create_rectangle(1001,0,1205,1000,fill="white") #white rectangle behind the options
 curtime = w.create_text(50,30,fill = "White") #Time running
-fps =     w.create_text(150,30,fill = "White") #current FPS
-
+fps = w.create_text(150,30,fill = "White") #current FPS
+ox = 0
+oy = 0
 #Pause related#
 tbp = False
 tbpc = False
@@ -371,8 +375,9 @@ stary.place(x=1040,y=150,width=120)
 
 
 ###Planet specific variables###
-
 w.create_rectangle(1020,90,1180,190,fill="Light Grey")
+w.create_rectangle(1020,675,1180,790,fill="Light Grey")
+
 w.create_rectangle(1020,200,1180,340,fill="Light Grey")
 w.create_rectangle(1020,350,1180,450,fill="Light Grey")
 w.create_rectangle(1001,460,1250,470,fill="BLACK")
@@ -401,15 +406,15 @@ Density.place(x=1100,y = 270)
 
 trailduration = IntVar()
 trailduration.set(0)
-w.create_text(1100,687,text="Trail duration\n(0 = forever)",font=("Helvetica",10))
-trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL)
-trailduration.place(x=1050,y=710)
+w.create_text(1100,700,text="Trail duration\n(0 = forever)",font=("Helvetica",10,"bold"))
+trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL,bg="light grey",highlightthickness=0)
+trailduration.place(x=1050,y=730)
 
 #Force Amplification
 
 speed = 1 #forceamp
 w.create_text(1035,20,text="Force amp")
-speed = Scale(master,from_=1,to=100,resolution=1,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20)
+speed = Scale(master,from_=1,to=100,resolution=1,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20,highlightthickness=0)
 speed.place(x=1085,y=5)
 
 #Planet variable showing#
@@ -500,6 +505,17 @@ while True:
            #I decided not to function this to save on calling globals##
            for number in range(0,len(OBD)):
                      w.move(OBD[number]["planet"],OBD[number]["dx"],OBD[number]["dy"])
+                     if number == planetselected:
+                         w.delete("s")
+                         selected = w.coords(OBD[number]["planet"])
+                         try:
+                             selectoval = w.create_oval(selected[0]-10,selected[1]-10,selected[2]+10,selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
+                         except IndexError:
+                             print("Planet was destroyed, defaulting to 0.")
+                             try:
+                                  planetselected = 0
+                             except IndexError:
+                                 print("All planets are destroyed.")
                      oldxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
                      try: OBD[number]["x0"],OBD[number]["y0"],OBD[number]["x1"],OBD[number]["y1"]= w.coords(OBD[number]["planet"])
                      except ValueError: pass
