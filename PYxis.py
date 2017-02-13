@@ -16,7 +16,6 @@ import time #needed for restriction of refresh rate (may not be needed)
 import math #needed for physics calculation
 import random #for some more fun parts of the program.
 import datetime #for delta time calculations
-import platform #for os related code
 #functions and variables
 #many of these variables can easily be locatlised.
 master = Tk() #master window
@@ -24,10 +23,8 @@ alphabet=[]
 w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
-master.iconbitmap("icon.ico")
-currr = 0 #The row number in the 2d array "OBJECTS" that is avalible for use.
-xforce = 0
-yforce = 0
+try: master.iconbitmap("icon.ico")
+except: print("Icon not found. Continuing..")
 speed = 1
 tbp = False
 tbpc = False
@@ -36,14 +33,15 @@ starttime = time.time()
 lasttime = starttime
 paused = False
 prevpaused = False
-imported = False
 planetcolour = ((255,0,0),"#FF0000")
 planetselected = 0
+
+poplist = []
 #constants
 G = 6.6742 #simplfied
 #2d arrays
-OBJECTS = [["n" for x in range(18)] for y in range(200)]#(Y,X) #2d array for planet variables
-exclude = [] #temporary mesure
+OBJECTS = []#(Y,X) #2d array for planet variables
+
 """ This is the worst way of doing this. I know OOP is a thing but that doesn't matter right now
 Collums of OBJECTS:
 0 = The x0
@@ -67,42 +65,43 @@ Collums of OBJECTS:
 """
 
 def main():
-       if currr > 1:
-               for mainl in range(0,currr): #for more than one object
-                   if mainl not in exclude:
+       if len(OBJECTS) > 1:
+               for mainl in range(0,len(OBJECTS)): #for more than one object
+
                        x = 0
                        alone = True
                        for lines in OBJECTS:
-                           if lines[0] != "n" and lines[0] != "d":
+                           if lines[0] != "n":
                                 if mainl != x:
                                     alone = False
                                     break
                            x+=1
-                       if alone == True: solo(mainl,trail,planetcolour)
-                       if OBJECTS[mainl][0] != "n" and OBJECTS[mainl][0] != "d":
-                           objectxy = [((OBJECTS[mainl][0]+OBJECTS[mainl][2])/2),((OBJECTS[mainl][1]+OBJECTS[mainl][3])/2)]
-                           calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed)
-                           OBJECTS[mainl][8] = objectxy [0]
-                           OBJECTS[mainl][9] = objectxy [1]
-       if currr == 1: solo(0,trail,planetcolour)
-def solo(no,trail,planetcolour):
-        x = ((OBJECTS[no][0]+OBJECTS[no][2])/2)
-        y = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
-        w.move(OBJECTS[no][14],OBJECTS[no][6],OBJECTS[no][7])
-        OBJECTS[no][0],OBJECTS[no][1],OBJECTS[no][2],OBJECTS[no][3] = w.coords(OBJECTS[no][14])
-        nx = ((OBJECTS[no][0]+OBJECTS[no][2])/2)
-        ny = ((OBJECTS[no][1]+OBJECTS[no][3])/2)
+                       if alone == True: solo(trail,planetcolour)
+                       objectxy = [((OBJECTS[mainl][0]+OBJECTS[mainl][2])/2),((OBJECTS[mainl][1]+OBJECTS[mainl][3])/2)]
+                       calculatedeltaXY(G,objectxy,mainl,OBJECTS,speed)
+                       OBJECTS[mainl][8] = objectxy [0]
+                       OBJECTS[mainl][9] = objectxy [1]
+       if len(OBJECTS) == 1:
+              for x in range(len(OBJECTS)): pass ##print(OBJECTS[x])
+              solo(trail,planetcolour)
+def solo(ntrail,planetcolour):
+        x = ((OBJECTS[0][0]+OBJECTS[0][2])/2)
+        y = ((OBJECTS[0][1]+OBJECTS[0][3])/2)
+        w.move(OBJECTS[0][14],OBJECTS[0][6],OBJECTS[0][7])
+        OBJECTS[0][0],OBJECTS[0][1],OBJECTS[0][2],OBJECTS[0][3] = w.coords(OBJECTS[0][14])
+        nx = ((OBJECTS[0][0]+OBJECTS[0][2])/2)
+        ny = ((OBJECTS[0][1]+OBJECTS[0][3])/2)
         xy = [x,y]
         nxy = [nx,ny]
-        if trail == True: drawtrail(xy,nxy,no,trail,planetcolour)
+        if trail == True: drawtrail(xy,nxy,0,trail,planetcolour)
 
-def calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed):
-        for planets in range(0,currr):
-            if OBJECTS[planets][0] != "n" and OBJECTS[planets][0] != "d" and planets not in exclude:
+def calculatedeltaXY(G,objectxy,mainl,OBJECTS,speed):
+        for planets in range(0,len(OBJECTS)-1):
+
+            if planets != mainl:
                 object2xy = [((OBJECTS[planets][0]+OBJECTS[planets][2])/2),((OBJECTS[planets][1]+OBJECTS[planets][3])/2)]
                 if object2xy != objectxy:
-                       ###Essentialy the collision detection###
-                       if planets not in exclude and mainl not in exclude:
+                           ###Essentialy the collision detection###
                            radius,theta,xn,yn = maths(objectxy,object2xy)
                            if colide(mainl,planets,radius) == True:
                                   if OBJECTS[mainl][10] >= OBJECTS[planets][10]:
@@ -113,12 +112,12 @@ def calculatedeltaXY(currr,G,objectxy,mainl,exclude,OBJECTS,speed):
                                          tbd = mainl
                                          OBJECTS[planets][4] += OBJECTS[mainl][4]
                                          OBJECTS[planets][17] += 1
-
-                                  exclude.append(tbd)
                                   w.delete(OBJECTS[tbd][14])
-                                  for x in range(0,len(OBJECTS[tbd])): OBJECTS[tbd][x] = "d"
-                                  continue
-                           Euler(objectxy,object2xy,mainl,planets,exclude,OBJECTS,speed)
+                                  global poplist
+                                  if tbd not in poplist:
+                                      poplist.append(tbd)
+                                  break
+                           Euler(objectxy,object2xy,mainl,planets,OBJECTS,speed)
 
 def maths(objectxy,object2xy):
         a = int(objectxy[0] - object2xy[0])
@@ -138,7 +137,7 @@ def maths(objectxy,object2xy):
         else: xn = False
         return(radius,theta,xn,yn)
 
-def physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed):
+def physics(mainl,planets,objectxy,object2xy,OBJECTS,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
        if radius == 0: pass #no div by 0
        Fgrav = ((G*(int(OBJECTS[mainl][4])*(int(OBJECTS[planets][4]))))/radius**2) / OBJECTS[mainl][4]
@@ -153,20 +152,17 @@ def physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed):
        #Resolving (Down) (positive y)
        return(vx,vy)
 
-def Euler(objectxy,object2xy,mainl,planets,exclude,OBJECTS,speed):
+def Euler(objectxy,object2xy,mainl,planets,OBJECTS,speed):
        prevxy = objectxy
-       vx,vy = physics(mainl,planets,objectxy,object2xy,exclude,OBJECTS,speed)
+       vx,vy = physics(mainl,planets,objectxy,object2xy,OBJECTS,speed)
        OBJECTS[mainl][6] += vx
        OBJECTS[mainl][7] += vy
 
 
 def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global planetcolour
-    global currr
-    OBJECTS[currr][11],OBJECTS[currr][12],OBJECTS[currr][13] = R,G,B
-    OBJECTS[currr] = [x-rad,y-rad,x+rad,y+rad,mass,'#%02x%02x%02x' % ((int(OBJECTS[currr][11]//1), int(OBJECTS[currr][12]//1), int(OBJECTS[currr][13]//1))),cx,cy,x,y,rad,R,G,B,0,time.time(),theta,0]
-    OBJECTS[currr][14] = w.create_oval(OBJECTS[currr][0],OBJECTS[currr][1],OBJECTS[currr][2],OBJECTS[currr][3],fill=(OBJECTS[currr][5]),tags="oval")
-    currr +=1
+    OBJECTS.append(([x-rad,y-rad,x+rad,y+rad,mass,('#%02x%02x%02x' % (int(R//1), int(G//1), int(B//1))),cx,cy,x,y,rad,R,G,B,0,time.time(),theta,0]))
+    OBJECTS[len(OBJECTS)-1][14] = w.create_oval(OBJECTS[len(OBJECTS) -1][0],OBJECTS[len(OBJECTS) -1][1],OBJECTS[len(OBJECTS) -1][2],OBJECTS[len(OBJECTS) -1][3],fill=(OBJECTS[len(OBJECTS) -1][5]),tags="oval")
     w.lower("oval")
     w.lower("star")
 
@@ -285,54 +281,59 @@ def startoggle(): #make these shift all in one direction at some point
 ###LOAD AND SAVE SYSTEM###
 def load():
     #variables to be edited#
-    global currr
-    global imported
     global OBJECTS
-    global exclude
     file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
     try:
        with open(file,'r') as load:
+             temparray = []
              ##Reset Variables##
              systemname = ("PYxis - System: {}".format(file))
              master.wm_title(systemname)
-             currr = 0
-             imported = True
-             exclude = []
              w.delete("t")
              ###Delete array###
-             for dely in range(0,len(OBJECTS)):
-                    for delx in range(0,len(OBJECTS[dely])):
-                           OBJECTS[dely][delx] = "n"
+             del OBJECTS[:]
              ###set array to the file###
              lines = [line.split() for line in load]
              for line in range(0,len(lines)):
-                    if len(lines) < line:
-                          OBJECTS[line] = ["n" for i in range(len(OBJECTS[1]))]
-                    else: OBJECTS[line] = lines[line]
+                    temparray.append(lines[line])
+
              w.delete("oval")
              ###convert to float###
-             for y in range(0,len(OBJECTS)):
-                     if OBJECTS[y][0] == "n": break
-                     for x in range(0,18):
-                            try: OBJECTS[y][x] = float(OBJECTS[y][x])
+             for y in range(0,len(temparray)):
+                     for x in range(len(temparray[y])):
+                            try: temparray[y][x] = float(temparray[y][x])
                             except: pass
-       for lines in range(0,len(OBJECTS)):
-            currr = lines
-            if OBJECTS[lines][0] == "n": break
-            if OBJECTS[lines][1] != "d":
-                   createplanet(OBJECTS[lines][10],OBJECTS[lines][4],((OBJECTS[lines][0]+OBJECTS[lines][2])/2),((OBJECTS[lines][1]+OBJECTS[lines][3])/2),OBJECTS[lines][11],OBJECTS[lines][12],OBJECTS[lines][13],OBJECTS[lines][6],OBJECTS[lines][7],0)
+       for lines in range(0,len(temparray)):
+            createplanet(temparray[lines][10],temparray[lines][4],((temparray[lines][0]+temparray[lines][2])/2),((temparray[lines][1]+temparray[lines][3])/2),temparray[lines][11],temparray[lines][12],temparray[lines][13],temparray[lines][6],temparray[lines][7],0)
     except FileNotFoundError:
               print("No file was found.")
+    dumpobjects()
+
+def popplanets(): 
+    global OBJECTS
+    global poplist
+    for planet in range(len(poplist)):
+        print("Destroying planet:",poplist[planet])
+        w.delete(OBJECTS[poplist[planet]][14])
+        OBJECTS.pop(poplist[planet])
+    poplist = []
 
 def save():
-       file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
-       for lines in OBJECTS:
-              for entity in lines:
-                     file.write(str(entity))
-                     file.write(" ")
-                     if lines[0] == "n": break
-              file.write("\n")
-       file.close()
+    file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
+    end = False
+    for lines in OBJECTS:
+              if lines[0] == "d": continue
+              if end != True:
+                     for entity in lines:
+                            if lines[0] == "n":
+                                   end = True
+                                   file.write(str(entity))
+                                   break
+                            file.write(str(entity))
+                            file.write(" ")
+                     file.write("\n")
+              else: break
+    file.close()
 
 def selectobject(event):
        x = event.x
@@ -341,7 +342,7 @@ def selectobject(event):
        try:
               if w.gettags(closest)[0] == "oval":
                      coords = w.coords(closest)
-                     for i in range(0,currr):
+                     for i in range(0,len(OBJECTS) -1):
                             if coords == [OBJECTS[i][0],OBJECTS[i][1],OBJECTS[i][2],OBJECTS[i][3]]:
                                          global planetselected
                                          planetselected = i
@@ -349,6 +350,13 @@ def selectobject(event):
        except: pass
 def deltrail():
        w.delete("t")
+
+def dumpobjects():
+       global OBJECTS
+       for x in range(0,len(OBJECTS)):
+              print(OBJECTS[x])
+
+
 
 #------------------------------------------UI SECTION------------------------------------------#
 w.configure(background="Black")
@@ -444,7 +452,7 @@ showoffdevoured.place(x=1100,y=595)
 planetsdevoured.set(0)
 showoffdevoured.configure(state="disabled")
 
-w.create_text(1062,635,text="Time alive")
+w.create_text(1062,635,text="Time alive(s)")
 planetalivetime = IntVar()
 showoffalive = Entry(master,width=6,textvariable=planetalivetime)
 showoffalive.place(x=1100,y=625)
@@ -458,7 +466,7 @@ speed.place(x=1085,y=5)
 ###    TITLE    ###
 
 for alpha in range (65,91): alphabet.append(chr(alpha))  #something like that
-systemname = ("Gravitpy - System: {}{}-{}{}{}".format(alphabet[random.randint(0,25)],alphabet[random.randint(0,25)],random.randint(0,9),random.randint(0,9),random.randint(0,9))) #Standard string consentraition methods leave ugly curly brackets.
+systemname = ("PYxis - System: {}{}-{}{}{}".format(alphabet[random.randint(0,25)],alphabet[random.randint(0,25)],random.randint(0,9),random.randint(0,9),random.randint(0,9))) #Standard string consentraition methods leave ugly curly brackets.
 master.wm_title(systemname)
 
 ##Startoggle##
@@ -475,6 +483,7 @@ while True:
     if paused != True:
            w.itemconfig(curtime,text=("Time",round(time.time() - starttime,2)))
            otime = time.time()
+           popplanets()
            main()
            try: w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
            except ZeroDivisionError: pass #if the time change is too low
@@ -488,7 +497,7 @@ while True:
                          tbpc = False
                   else: playpause(False)
            ##Selected planet attributes##
-           if currr > 0 and OBJECTS[planetselected][0] != "d":
+           if len(OBJECTS) -1 > 0:
                   planetvelocity.set(math.sqrt(((OBJECTS[planetselected][6])**2) +  ((OBJECTS[planetselected][7])**2))*100)
                   planetmass.set(OBJECTS[planetselected][4])
                   planetdensity.set(OBJECTS[planetselected][4] / OBJECTS[planetselected][10])
@@ -496,8 +505,8 @@ while True:
                   planetsdevoured.set(OBJECTS[planetselected][17])
             ##Move the planets in time with the rest of the program.##
            #I decided not to function this to save on calling globals##
-           for number in range(0,currr):
-                  if OBJECTS[number][0] != "d" and OBJECTS[number][0] != "n":
+           for number in range(0,len(OBJECTS)):
+                  if OBJECTS[number][0] != "n":
                      w.move(OBJECTS[number][14],OBJECTS[number][6],OBJECTS[number][7])
                      oldxy = [((OBJECTS[number][0]+OBJECTS[number][2])/2),((OBJECTS[number][1]+OBJECTS[number][3])/2)]
                      try: OBJECTS[number][0],OBJECTS[number][1],OBJECTS[number][2],OBJECTS[number][3] = w.coords(OBJECTS[number][14])
