@@ -10,7 +10,7 @@ This project was created for my A-Level Edexcel Computer Science coursework.
 ```
 ### Screenshots
 
-![Olderversion](/assets/pyxis.png)
+![Olderversion](/assets/pyxis1.png) ![Olderversion](/assets/pyxis2.png) ![Olderversion](/assets/pyxis3.png)
 
 
 
