@@ -8,6 +8,13 @@ This project was created for my A-Level Edexcel Computer Science coursework.
 - Python3
 - Tkinter (included in default Python3 installation)
 ```
+### Screenshots
+
+![Olderversion](/assets/pyxis.png)
+
+
+
+
 
 ## Acknowledgments
 
