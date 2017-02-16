@@ -10,7 +10,7 @@ This project was created for my A-Level Edexcel Computer Science coursework.
 ```
 ### Screenshots
 
-<img src="/assets/pyxis1.png" width="120" height="100"> <img src="/assets/pyxis2.png" width="120" height="100"> <img src="/assets/pyxis3.png" width="120" height="100"> <img src="/assets/pyxis4.png" width="120" height="100">
+<img src="/assets/pyxis1.png" width="240" height="200"> <img src="/assets/pyxis2.png" width="240" height="200"> <img src="/assets/pyxis3.png" width="240" height="200"> <img src="/assets/pyxis4.png" width="240" height="200">
 
 
 
