@@ -20,15 +20,16 @@ alphabet=[]
 w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
-try: master.iconbitmap("icon.ico")
-except TclError: print("Icon not found. Continuing..")
+try:
+       master.iconbitmap("icon.ico")
+except TclError:
+       print("Icon not found. Continuing..")
 
 
 #constants
 G = 6.6742 #simplfied
 
 #2d arrays
-OBJECTS = []#(Y,X) #2d array for planet variables
 OBD = [] #2D dictionary for planet variables
 poplist = []
 
@@ -37,19 +38,20 @@ def main():
                for mainl in range(0,len(OBD)): #for more than one object
                        x = 0
                        alone = True
-                       for lines in OBD:
-                            if mainl != x:
+                       for lines in range(len(OBD)):
+                            if mainl != lines:
                                    alone = False
                                    break
-                            x+=1
-                       if alone == True: solo(trail,planetcolour)
+                       if alone == True:
+                              solo(trail,planetcolour)
                        objectxy = [((OBD[mainl]["x0"]+OBD[mainl]["x1"])/2),((OBD[mainl]["y0"]+OBD[mainl]["y1"])/2)]
                        calculatedeltaXY(G,objectxy,mainl,OBD,speed)
                        OBD[mainl]["lx"] = objectxy [0]
                        OBD[mainl]["ly"] = objectxy [1]
        if len(OBD) == 1:
-              solo(trail,planetcolour)
-def solo(ntrail,planetcolour):
+              solo(planetcolour)
+
+def solo(planetcolour):
         #print(OBD[0])
         x = ((OBD[0]["x0"]+OBD[0]["x1"])/2)
         y = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
@@ -59,10 +61,10 @@ def solo(ntrail,planetcolour):
         ny = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
         xy = [x,y]
         nxy = [nx,ny]
-        if trail == True: drawtrail(xy,nxy,0,trail,planetcolour)
+        if trailduration.get() > 0: drawtrail(xy,nxy,0,planetcolour)
 
 def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
-        for planets in range(0,len(OBD)-1):
+        for planets in range(0,len(OBD)):
             if planets != mainl:
                 object2xy = [((OBD[planets]["x0"]+OBD[planets]["x1"])/2),((OBD[planets]["y0"]+OBD[planets]["y1"])/2)]
                 if object2xy != objectxy:
@@ -71,15 +73,17 @@ def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
                            if colide(mainl,planets,radius) == True:
                                   if OBD[mainl]["radius"] >= OBD[planets]["radius"]:
                                          tbd = planets
+                                         tbnd = mainl
                                          OBD[mainl]["mass"] += OBD[planets]["mass"]
                                          OBD[mainl]["planetsdevoured"] += 1
                                   else:
                                          tbd = mainl
+                                         tbnd = planets
                                          OBD[planets]["mass"] += OBD[mainl]["mass"]
                                          OBD[planets]["planetsdevoured"] += 1
-                                  w.delete(OBD[tbd]["planet"])
+
                                   global poplist
-                                  if tbd not in poplist:
+                                  if tbd not in poplist and tbnd not in poplist:
                                       poplist.append(tbd)
                                   break
                            Euler(objectxy,object2xy,mainl,planets,OBD,speed)
@@ -91,31 +95,42 @@ def maths(objectxy,object2xy):
         yn = False
         radius = math.sqrt((a**2) + (b**2)) #Pythagorus theorem
         if radius != 0:
-               if a == 0 : theta = 0 #change in x is 0 and we dont want an error to be thrown.
-               else: theta = abs(math.atan(b/a))
-        else: theta = 0
+               if a == 0:
+                      theta = 0 #change in x is 0 and we dont want an error to be thrown.
+               else:
+                      theta = abs(math.atan(b/a))
+        else:
+               theta = 0
         if -1 < radius < 1:
                radius = 1
-        if b > 0: yn = True
-        else: yn = False
-        if a > 0: xn = True
-        else: xn = False
+        if b > 0:
+               yn = True
+        else:
+               yn = False
+        if a > 0:
+               xn = True
+        else:
+               xn = False
         return(radius,theta,xn,yn)
 
 def physics(mainl,planets,objectxy,object2xy,OBD,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
-       if radius == 0: pass #no div by 0
-       Fgrav = ((G*(int(OBD[mainl]["mass"])*(int(OBD[planets]["mass"]))))/radius**2) / OBD[mainl]["mass"]
-       if xn == True:accelerationx = -(Fgrav*math.cos(theta))
-       else:accelerationx = Fgrav*math.cos(theta)
-       if yn == True: accelerationy = -(Fgrav*math.sin(theta))
-       else: accelerationy = Fgrav*math.sin(theta)
-       cspeed = (speed.get()/1000)
-       #Resolving (Right) (positive x)
-       vx = accelerationx*cspeed
-       vy = accelerationy*cspeed
-       #Resolving (Down) (positive y)
-       return(vx,vy)
+       if radius != 0:
+              Fgrav = ((G*(int(OBD[mainl]["mass"])*(int(OBD[planets]["mass"]))))/radius**2) / OBD[mainl]["mass"]
+              if xn == True:
+                     accelerationx = -(Fgrav*math.cos(theta))
+              else:
+                     accelerationx = Fgrav*math.cos(theta)
+              if yn == True:
+                     accelerationy = -(Fgrav*math.sin(theta))
+              else:
+                     accelerationy = Fgrav*math.sin(theta)
+              cspeed = (speed.get()/1000)
+              #Resolving (Right) (positive x)
+              vx = accelerationx*cspeed
+              vy = accelerationy*cspeed
+              #Resolving (Down) (positive y)
+              return(vx,vy)
 
 def Euler(objectxy,object2xy,mainl,planets,OBD,speed):
        prevxy = objectxy
@@ -129,7 +144,6 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global OBD
     OBD.append({"x0": x-rad,"y0": y-rad,"x1": x+rad, "y1": y+rad,"mass": mass,"RGB":('#%02x%02x%02x' % (int(R//1), int(G//1), int(B//1))),"dx":cx,"dy":cy,"lx":x,"ly":y,"radius":rad,"R":R,"G":G,"B":B,"planet":0,"alivetime":time.time(),"Theta":theta,"planetsdevoured":0})
     slot = (len(OBD)-1)
-    print("slot",slot)
     OBD[slot]["planet"] = w.create_oval(OBD[slot]["x0"],OBD[slot]["y0"],OBD[slot]["x1"],OBD[slot]["y1"],fill=(OBD[slot]["RGB"]),tags="oval")
 
     w.lower("oval")
@@ -138,28 +152,31 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
 def colide(mainl,planets,radius):
     if radius < OBD[mainl]["radius"]:
         w.lower(OBD[planets]["planet"])
-        if radius < OBD[mainl]["radius"]: return True
+        if radius < OBD[mainl]["radius"]:
+               return True
     elif radius < OBD[planets]["radius"]:
         w.lower(OBD[mainl]["planet"])
-        if radius < OBD[planets]["radius"]: return True
+        if radius < OBD[planets]["radius"]:
+               return True
     else: return False
 
 ###UI Related subroutines###
 
 def trailtoggle():
     global trail
-    if trailbutton["text"] == "Toggle Trail on": trailbutton["text"] = "Toggle Trail off"
-    else: trailbutton["text"] = "Toggle Trail on"
+    if trailbutton["text"] == "Toggle Trail on":
+           trailbutton["text"] = "Toggle Trail off"
+    else:
+           trailbutton["text"] = "Toggle Trail on"
     trail = not trail
 
-
-def drawtrail(prevxy,objectxy,mainl,trail,planetcolour):
+def drawtrail(prevxy,objectxy,mainl,planetcolour):
        global trailduration
-       if trail == True:
-           colour = planetcolour [1]
-           trail = w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBD[mainl]["RGB"],tags="t")
-           w.lower(trail)
-           if trailduration.get() != 0: master.after(int((trailduration.get())*1000),lambda:w.delete(trail))
+       colour = planetcolour [1]
+       trail = w.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBD[mainl]["RGB"],tags="t")
+       w.lower(trail)
+       if trailduration.get() != 20:
+              master.after(int((trailduration.get())*1000),lambda:w.delete(trail))
 
 def playpause(colourc):
        global paused
@@ -169,8 +186,10 @@ def playpause(colourc):
                   playp["text"] = " ► "
                   paused = True
        elif colourc ==  False:
-           if playp["text"] == "▐▐  ": playp["text"] = " ► "
-           else: playp["text"] = "▐▐  "
+           if playp["text"] == "▐▐  ":
+                  playp["text"] = " ► "
+           else:
+                  playp["text"] = "▐▐  "
            paused = not paused
        w.update()
 
@@ -179,16 +198,19 @@ def safetypause(colourc):
        if paused == True:
               playpause(colourc)
               tbp = False
-       else: tbp = True
+       else:
+              tbp = True
 
-def clickfunct(event): 
+def clickfunct(event):
        global ox
        global oy
        global mass
        global density
        global planetcolour
-       nmass = int(mass.get())
-       ndensity = int(density.get())
+       floatmass = float(mass.get())
+       floatdensity = float(density.get())
+       nmass = round(abs(floatmass))
+       ndensity = round(abs(floatdensity))
        if event.x < 1000:
               ox = event.x
               oy = event.y
@@ -209,9 +231,10 @@ def release(event):
        cx = event.x - ox
        cy = event.y - oy
        w.delete("shot")
-       lmass = int(mass.get())
-       ldensity = int(density.get())
-       if lmass < ldensity: lmass = ldensity *2
+       lmass = int(mass.get()//1)
+       ldensity = int(density.get()//1)
+       if lmass < ldensity:
+              lmass = ldensity *2
        radius = lmass / ldensity
        end = [x,y]
        start = [ox,oy]
@@ -234,6 +257,10 @@ def getcolour(prevpaused):
 def askcolour(prevpaused):
        global planetcolour
        planetcolour = askcolor()
+       try:
+               x = planetcolour [1][0]
+       except TypeError:
+              planetcolour = ((255,0,0),"#FF0000")
 
 def startoggle(): #make these shift all in one direction at some point
     if stary["text"] == "Toggle Stars off":
@@ -248,10 +275,14 @@ def startoggle(): #make these shift all in one direction at some point
         stary["text"] = "Toggle Stars off"
 
 ###LOAD AND SAVE SYSTEM###
-def load():
+def load(quick):
     #variables to be edited#
     global OBD
-    file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
+    sfile = ""
+    if quick == False:
+           file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
+    else:
+           file ="tmp.gpy"
     try:
        with open(file,'r') as load:
              temparray = []
@@ -265,44 +296,38 @@ def load():
              lines = [line.split() for line in load]
              for line in range(0,len(lines)):
                     temparray.append(lines[line])
-
              w.delete("oval")
              ###convert to float###
              for y in range(0,len(temparray)):
                      for x in range(len(temparray[y])):
                             try: temparray[y][x] = float(temparray[y][x])
-                        except ValueError: pass #cant convert strings to float
+                            except ValueError: pass #cant convert strings to float
        for lines in range(0,len(temparray)):
             createplanet(temparray[lines][10],temparray[lines][4],((temparray[lines][0]+temparray[lines][2])/2),((temparray[lines][1]+temparray[lines][3])/2),temparray[lines][11],temparray[lines][12],temparray[lines][13],temparray[lines][6],temparray[lines][7],0)
     except FileNotFoundError:
-              print("No file was found.")
+              print("FILE: No file was found.")
+
+def save(quick):
+    global OBD
+    if quick == True:
+           file = open("tmp.gpy","w")
+    else:
+           file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
+    for lines in range(len(OBD)):
+             array = [OBD[lines]["x0"],OBD[lines]["y0"],OBD[lines]["x1"],OBD[lines]["y1"],OBD[lines]["mass"],OBD[lines]["RGB"],OBD[lines]["dx"],OBD[lines]["dy"],OBD[lines]["lx"],OBD[lines]["ly"],OBD[lines]["radius"],OBD[lines]["R"],OBD[lines]["G"],OBD[lines]["B"],OBD[lines]["planet"],OBD[lines]["alivetime"],OBD[lines]["Theta"],OBD[lines]["planetsdevoured"]]
+             for entitiy in array:
+                 file.write(str(entitiy))
+                 file.write(" ")
+             file.write(" \n")
+    file.close()
 
 def popplanets():
     global OBD
     global poplist
     for planet in range(len(poplist)):
-        print("Destroying planet:",poplist[planet])
-        print(poplist[planet])
         w.delete(OBD[poplist[planet]]["planet"])
         OBD.pop(poplist[planet])
     poplist = []
-
-def save():
-    file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
-    end = False
-    for lines in OBD:
-              if lines[0] == "d": continue
-              if end != True:
-                     for entity in lines:
-                            if lines[0] == "n":
-                                   end = True
-                                   file.write(str(entity))
-                                   break
-                            file.write(str(entity))
-                            file.write(" ")
-                     file.write("\n")
-              else: break
-    file.close()
 
 def selectobject(event):
        x = event.x
@@ -315,7 +340,7 @@ def selectobject(event):
                             if coords == [OBD[i]["x0"],OBD[i]["y0"],OBD[i]["x1"],OBD[i]["y1"]]:
                                          global planetselected
                                          planetselected = i
-              else: print("There's no planets around here!")
+              else: print("INFO: There's no planets around here!")
        except: pass
 def deltrail():
        w.delete("t")
@@ -324,9 +349,8 @@ def dumpobd():
        global OBD
        print("\n-----dumpobd-----")
        for x in range(0,len(OBD)):
-              print(OBD[x])
+              print("dumpobd:",OBD[x])
        print("-----------------\n")
-
 
 #------------------------------------------UI SECTION------------------------------------------#
 
@@ -339,6 +363,7 @@ curtime = w.create_text(50,30,fill = "White") #Time running
 fps = w.create_text(150,30,fill = "White") #current FPS
 ox = 0
 oy = 0
+
 #Pause related#
 tbp = False
 tbpc = False
@@ -347,10 +372,6 @@ prevpaused = False
 playp = Button(master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
 playp.place(x=1150,y=5,width=30,height=30)
 
-#trail toggle#
-trail = False
-trailbutton = Button(master, text="Toggle Trail on", command=trailtoggle)
-trailbutton.place(x=1040,y=120,width=120)
 
 #Delete trails#
 deltrailb = Button(master,text="Delete Trails",command=deltrail)
@@ -362,11 +383,17 @@ colourchoose = Button(master,text="Select colour",command=lambda:getcolour(prevp
 colourchoose.place(x=1040,y=300,width = 120)
 
 #load and save#
-loadfunct = Button(master,text="Load file",command=load)
-loadfunct.place(x=1060,y=415,width=80)
+loadfunct = Button(master,text="Load file",command=lambda:load(False))
+loadfunct.place(x=1100,y=415,width=60)
 
-savefunct = Button(master,text="Save file",command=save)
-savefunct.place(x=1060,y=385,width=80)
+quickloadfunct = Button(master,text="Quick Load",command=lambda:load(True))
+quickloadfunct.place(x=1030,y=415,width=70)
+
+savefunct = Button(master,text="Save file",command=lambda:save(False))
+savefunct.place(x=1100,y=385,width=60)
+
+quicksavefunct = Button(master,text="Quick save",command=lambda:save(True))
+quicksavefunct.place(x=1030,y=385,width=70)
 
 #toggle stars#
 stary = Button(master, text="Toggle Stars on", command=startoggle)
@@ -376,8 +403,7 @@ stary.place(x=1040,y=150,width=120)
 
 ###Planet specific variables###
 w.create_rectangle(1020,90,1180,190,fill="Light Grey")
-w.create_rectangle(1020,675,1180,790,fill="Light Grey")
-
+w.create_rectangle(1020,675,1180,760,fill="Light Grey")
 w.create_rectangle(1020,200,1180,340,fill="Light Grey")
 w.create_rectangle(1020,350,1180,450,fill="Light Grey")
 w.create_rectangle(1001,460,1250,470,fill="BLACK")
@@ -388,7 +414,7 @@ w.create_text(1100,215,text="Planet Properties",font=("Helvetica",10,"bold under
 
 #Mass#
 
-mass = IntVar()
+mass = DoubleVar()
 mass.set(100)
 w.create_text(1060,247,text= "Mass",font=("Helvetica", 10))
 Mass = Entry(master,width=10,textvariable=mass)
@@ -396,7 +422,7 @@ Mass.place(x=1100,y=240)
 
 #Density#
 
-density = IntVar()
+density = DoubleVar()
 density.set(20)
 w.create_text(1065,277,text= "Density",font=("Helvetica",10))
 Density = Entry(master,width=10, textvariable=density)
@@ -406,15 +432,15 @@ Density.place(x=1100,y = 270)
 
 trailduration = IntVar()
 trailduration.set(0)
-w.create_text(1100,700,text="Trail duration\n(0 = forever)",font=("Helvetica",10,"bold"))
 trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL,bg="light grey",highlightthickness=0)
-trailduration.place(x=1050,y=730)
+trailduration.place(x=1050,y=715)
+w.create_text(1100,700,text="Trail duration\n(20 = forever)",font=("Helvetica",10,"bold"))
 
 #Force Amplification
 
 speed = 1 #forceamp
 w.create_text(1035,20,text="Force amp")
-speed = Scale(master,from_=1,to=100,resolution=1,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20,highlightthickness=0)
+speed = Scale(master,from_=1,to=2,resolution=0.01,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20,highlightthickness=0)
 speed.place(x=1085,y=5)
 
 #Planet variable showing#
@@ -457,9 +483,6 @@ showoffalive.place(x=1100,y=625)
 planetalivetime.set(0)
 showoffalive.configure(state="disabled")
 
-
-
-
 ###    TITLE    ###
 
 for alpha in range (65,91): alphabet.append(chr(alpha))  #something like that
@@ -483,8 +506,7 @@ while True:
            if len(poplist) > 0:
                popplanets()
            main()
-           try: w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
-           except ZeroDivisionError: pass #if the time change is too low
+
 
            ##Pause safely##
            if tbp == True or tbpc == True:
@@ -501,7 +523,7 @@ while True:
                   planetdensity.set(OBD[planetselected]["mass"] / OBD[planetselected]["radius"])
                   planetalivetime.set(round(time.time() - OBD[planetselected]["alivetime"]))
                   planetsdevoured.set(OBD[planetselected]["planetsdevoured"])
-            ##Move the planets in time with the rest of the program.##
+           ##Move the planets in time with the rest of the program.##
            #I decided not to function this to save on calling globals##
            for number in range(0,len(OBD)):
                      w.move(OBD[number]["planet"],OBD[number]["dx"],OBD[number]["dy"])
@@ -511,14 +533,19 @@ while True:
                          try:
                              selectoval = w.create_oval(selected[0]-10,selected[1]-10,selected[2]+10,selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
                          except IndexError:
-                             print("Planet was destroyed, defaulting to 0.")
+                             print("INFO : Planet was destroyed, defaulting to 0.")
                              try:
                                   planetselected = 0
                              except IndexError:
-                                 print("All planets are destroyed.")
+                                 print("INFO : All planets are destroyed.")
                      oldxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
                      try: OBD[number]["x0"],OBD[number]["y0"],OBD[number]["x1"],OBD[number]["y1"]= w.coords(OBD[number]["planet"])
                      except ValueError: pass
                      newxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
-                     if trail==True: drawtrail(oldxy,newxy,number,trail,planetcolour)
+                     if trailduration.get() > 0:
+                            drawtrail(oldxy,newxy,number,planetcolour)
+           try:
+                  w.itemconfig(fps,text=("FPS:", round(1/(time.time()-otime))))
+           except ZeroDivisionError:
+                  pass #if the time change is too low
     w.update()
