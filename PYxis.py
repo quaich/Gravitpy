@@ -64,6 +64,7 @@ def solo(planetcolour):
         if trailduration.get() > 0: drawtrail(xy,nxy,0,planetcolour)
 
 def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
+        global poplist
         for planets in range(0,len(OBD)):
             if planets != mainl:
                 object2xy = [((OBD[planets]["x0"]+OBD[planets]["x1"])/2),((OBD[planets]["y0"]+OBD[planets]["y1"])/2)]
@@ -71,20 +72,21 @@ def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
                            ###Essentialy the collision detection###
                            radius,theta,xn,yn = maths(objectxy,object2xy)
                            if colide(mainl,planets,radius) == True:
-                                  if OBD[mainl]["radius"] >= OBD[planets]["radius"]:
+                                  if OBD[mainl]["radius"] >= OBD[planets]["radius"] and planets not in poplist:
                                          tbd = planets
                                          tbnd = mainl
                                          OBD[mainl]["mass"] += OBD[planets]["mass"]
                                          OBD[mainl]["planetsdevoured"] += 1
-                                  else:
+                                  elif OBD[planets]["radius"] >= OBD[mainl]["radius"] and mainl not in poplist:
                                          tbd = mainl
                                          tbnd = planets
                                          OBD[planets]["mass"] += OBD[mainl]["mass"]
                                          OBD[planets]["planetsdevoured"] += 1
 
-                                  global poplist
-                                  if tbd not in poplist and tbnd not in poplist:
-                                      poplist.append(tbd)
+                                  try:
+                                         if tbd not in poplist and tbnd not in poplist:
+                                             poplist.append(tbd)
+                                  except UnboundLocalError: pass
                                   break
                            Euler(objectxy,object2xy,mainl,planets,OBD,speed)
 
@@ -117,6 +119,7 @@ def physics(mainl,planets,objectxy,object2xy,OBD,speed):
        radius,theta,xn,yn = maths(objectxy,object2xy)
        if radius != 0:
               Fgrav = ((G*(int(OBD[mainl]["mass"])*(int(OBD[planets]["mass"]))))/radius**2) / OBD[mainl]["mass"]
+
               if xn == True:
                      accelerationx = -(Fgrav*math.cos(theta))
               else:
@@ -138,16 +141,43 @@ def Euler(objectxy,object2xy,mainl,planets,OBD,speed):
        OBD[mainl]["dx"] += vx
        OBD[mainl]["dy"] += vy
 
-
 def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global planetcolour
     global OBD
     OBD.append({"x0": x-rad,"y0": y-rad,"x1": x+rad, "y1": y+rad,"mass": mass,"RGB":('#%02x%02x%02x' % (int(R//1), int(G//1), int(B//1))),"dx":cx,"dy":cy,"lx":x,"ly":y,"radius":rad,"R":R,"G":G,"B":B,"planet":0,"alivetime":time.time(),"Theta":theta,"planetsdevoured":0})
     slot = (len(OBD)-1)
     OBD[slot]["planet"] = w.create_oval(OBD[slot]["x0"],OBD[slot]["y0"],OBD[slot]["x1"],OBD[slot]["y1"],fill=(OBD[slot]["RGB"]),tags="oval")
-
     w.lower("oval")
     w.lower("star")
+
+def perfectorbit(event): #creates an perfect orbit around the selected planet ceteris paribus
+       global planetselected
+       global planetcolour
+       global speed
+       global mass
+       global density
+       objectcoords = [event.x,event.y]
+       object2coords = [(OBD[planetselected]["x0"] +  OBD[planetselected]["x1"])/2,(OBD[planetselected]["y0"]+ OBD[planetselected]["y1"])/2]
+       rad,theta,xneg,yneg= maths(objectcoords,object2coords)
+       if theta % 90 != 0:
+           planetradius = mass.get()/density.get()
+           createplanet(planetradius,float(mass.get()),objectcoords[0],objectcoords[1],planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],0,0,theta)
+           vx,vy = physics((len(OBD)-1),planetselected,objectcoords,object2coords,OBD,speed)
+
+           OBD[len(OBD)-1]["dx"] = vy *mass.get()
+           OBD[len(OBD)-1]["dy"] = -vx  *mass.get()
+
+
+
+
+
+
+
+
+
+
+
+
 
 def colide(mainl,planets,radius):
     if radius < OBD[mainl]["radius"]:
@@ -207,15 +237,17 @@ def clickfunct(event):
        global mass
        global density
        global planetcolour
-       floatmass = float(mass.get())
-       floatdensity = float(density.get())
-       nmass = round(abs(floatmass))
-       ndensity = round(abs(floatdensity))
-       if event.x < 1000:
-              ox = event.x
-              oy = event.y
-              w.create_oval(event.x+(nmass/ndensity),event.y+(nmass/ndensity),event.x-(nmass/ndensity),event.y-(nmass/ndensity),fill=planetcolour[1],tags="shotoval")
-
+       try:
+              floatmass = float(mass.get())
+              floatdensity = float(density.get())
+              nmass = round(abs(floatmass))
+              ndensity = round(abs(floatdensity))
+              if event.x < 1000:
+                     ox = event.x
+                     oy = event.y
+                     w.create_oval(event.x+(nmass/ndensity),event.y+(nmass/ndensity),event.x-(nmass/ndensity),event.y-(nmass/ndensity),fill=planetcolour[1],tags="shotoval")
+       except TclError:
+              print("Mass and/or density values are invalid.")
 def motion(event):
        w.delete("shot")
        global planetcolour
@@ -231,17 +263,20 @@ def release(event):
        cx = event.x - ox
        cy = event.y - oy
        w.delete("shot")
-       lmass = int(mass.get()//1)
-       ldensity = int(density.get()//1)
-       if lmass < ldensity:
-              lmass = ldensity *2
-       radius = lmass / ldensity
-       end = [x,y]
-       start = [ox,oy]
-       rad,theta,xneg,yneg= maths(start,end)
-       vx = cx/((lmass)*5)
-       vy = cy/((lmass)*5)
-       createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy,theta)
+       try:
+              lmass = int(mass.get()//1)
+              ldensity = int(density.get()//1)       
+              if lmass < ldensity:
+                     lmass = ldensity *2
+              radius = lmass / ldensity
+              end = [x,y]
+              start = [ox,oy]
+              rad,theta,xneg,yneg= maths(start,end)
+              vx = cx /(rad)
+              vy = cy /(rad)
+              createplanet(round(radius),lmass,ox,oy,planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],vx,vy,theta)
+       except TclError:
+              pass
     w.delete("shotoval")
 
 def getcolour(prevpaused):
@@ -280,9 +315,9 @@ def load(quick):
     global OBD
     sfile = ""
     if quick == False:
-           file = filedialog.askopenfilename(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to load")
+           file = filedialog.askopenfilename(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to load")
     else:
-           file ="tmp.gpy"
+           file ="tmp.pyx"
     try:
        with open(file,'r') as load:
              temparray = []
@@ -305,14 +340,16 @@ def load(quick):
        for lines in range(0,len(temparray)):
             createplanet(temparray[lines][10],temparray[lines][4],((temparray[lines][0]+temparray[lines][2])/2),((temparray[lines][1]+temparray[lines][3])/2),temparray[lines][11],temparray[lines][12],temparray[lines][13],temparray[lines][6],temparray[lines][7],0)
     except FileNotFoundError:
-              print("FILE: No file was found.")
+            print("FILE: No file was found.")
+    except IndexError:
+            print("Invalid File.") 
 
 def save(quick):
     global OBD
     if quick == True:
-           file = open("tmp.gpy","w")
+           file = open("tmp.pyx","w")
     else:
-           file = filedialog.asksaveasfile(filetypes=[(".gpy Format","*.gpy")],title="Choose a file to save",defaultextension=".gpy")
+           file = filedialog.asksaveasfile(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to save",defaultextension=".gpy")
     for lines in range(len(OBD)):
              array = [OBD[lines]["x0"],OBD[lines]["y0"],OBD[lines]["x1"],OBD[lines]["y1"],OBD[lines]["mass"],OBD[lines]["RGB"],OBD[lines]["dx"],OBD[lines]["dy"],OBD[lines]["lx"],OBD[lines]["ly"],OBD[lines]["radius"],OBD[lines]["R"],OBD[lines]["G"],OBD[lines]["B"],OBD[lines]["planet"],OBD[lines]["alivetime"],OBD[lines]["Theta"],OBD[lines]["planetsdevoured"]]
              for entitiy in array:
@@ -325,8 +362,11 @@ def popplanets():
     global OBD
     global poplist
     for planet in range(len(poplist)):
-        w.delete(OBD[poplist[planet]]["planet"])
-        OBD.pop(poplist[planet])
+        try:
+               w.delete(OBD[poplist[planet]]["planet"])
+               OBD.pop(poplist[planet])
+        except:
+               print("Whoopsies")
     poplist = []
 
 def selectobject(event):
@@ -345,12 +385,18 @@ def selectobject(event):
 def deltrail():
        w.delete("t")
 
-def dumpobd():
-       global OBD
-       print("\n-----dumpobd-----")
-       for x in range(0,len(OBD)):
-              print("dumpobd:",OBD[x])
-       print("-----------------\n")
+
+
+
+
+for i in range(1,10):
+       lfill = "red"
+       if i == 5: lfill = "green"
+       w.create_line(100*i,0,100*i,1000,fill=lfill, dash = (4,4),tags="debug")
+       w.create_line(0,100*i,1000,100*i,fill=lfill, dash = (4,4),tags="debug")
+       w.create_line(0, 0, 1000, 1000, fill="red", dash=(4, 4),tags="debug")
+       w.create_line(0, 1000, 1000, 0, fill="red", dash=(4, 4),tags="debug")
+
 
 #------------------------------------------UI SECTION------------------------------------------#
 
@@ -370,12 +416,12 @@ tbpc = False
 paused = False
 prevpaused = False
 playp = Button(master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
-playp.place(x=1150,y=5,width=30,height=30)
+playp.place(x=1130,y=120,width=30,height=27)
 
 
 #Delete trails#
 deltrailb = Button(master,text="Delete Trails",command=deltrail)
-deltrailb.place(x=1100,y=60,width=80)
+deltrailb.place(x=1040,y=120,width=80)
 
 #Planet colour chooser#
 planetcolour = ((255,0,0),"#FF0000") #default planetcolour
@@ -384,13 +430,13 @@ colourchoose.place(x=1040,y=300,width = 120)
 
 #load and save#
 loadfunct = Button(master,text="Load file",command=lambda:load(False))
-loadfunct.place(x=1100,y=415,width=60)
+loadfunct.place(x=1110,y=415,width=60)
 
 quickloadfunct = Button(master,text="Quick Load",command=lambda:load(True))
 quickloadfunct.place(x=1030,y=415,width=70)
 
 savefunct = Button(master,text="Save file",command=lambda:save(False))
-savefunct.place(x=1100,y=385,width=60)
+savefunct.place(x=1110,y=385,width=60)
 
 quicksavefunct = Button(master,text="Quick save",command=lambda:save(True))
 quicksavefunct.place(x=1030,y=385,width=70)
@@ -402,13 +448,13 @@ stary.place(x=1040,y=150,width=120)
 
 
 ###Planet specific variables###
-w.create_rectangle(1020,90,1180,190,fill="Light Grey")
+w.create_rectangle(1020,50,1180,190,fill="Light Grey") #toggle function box
 w.create_rectangle(1020,675,1180,760,fill="Light Grey")
 w.create_rectangle(1020,200,1180,340,fill="Light Grey")
 w.create_rectangle(1020,350,1180,450,fill="Light Grey")
 w.create_rectangle(1001,460,1250,470,fill="BLACK")
 w.create_rectangle(1020,480,1180,660,fill="Light Grey")
-w.create_text(1100,105,text="Toggle Functions",font=("Helvetica",10,"bold underline"))
+w.create_text(1100,63,text="Misc Functions",font=("Helvetica",10,"bold underline"))
 w.create_text(1100,366,text="Load and save",font=("Helvetica",10,"bold underline"))
 w.create_text(1100,215,text="Planet Properties",font=("Helvetica",10,"bold underline"))
 
@@ -434,14 +480,14 @@ trailduration = IntVar()
 trailduration.set(0)
 trailduration = Scale(master,from_=0,to=20,orient=HORIZONTAL,bg="light grey",highlightthickness=0)
 trailduration.place(x=1050,y=715)
-w.create_text(1100,700,text="Trail duration\n(20 = forever)",font=("Helvetica",10,"bold"))
+w.create_text(1100,700,text="Trail duration\n      (20 = ∞)",font=("Helvetica",10,"bold"))
 
 #Force Amplification
 
 speed = 1 #forceamp
-w.create_text(1035,20,text="Force amp")
-speed = Scale(master,from_=1,to=2,resolution=0.01,variable=speed,orient=HORIZONTAL,bg="white",length = 50,width=20,highlightthickness=0)
-speed.place(x=1085,y=5)
+w.create_text(1070,100,text="Force amp")
+speed = Scale(master,from_=1,to=2,resolution=0.01,variable=speed,orient=HORIZONTAL,length = 50,width=20,bg="light grey",highlightthickness=0)
+speed.place(x=1110,y=70)
 
 #Planet variable showing#
 planetselected = 0
@@ -497,7 +543,7 @@ w.bind("<Button-1>",clickfunct) #initial click
 w.bind("<B1-Motion>",motion) #click and drag
 w.bind("<ButtonRelease-1>",release) #release of click
 w.bind("<Button-3>",selectobject)
-
+w.bind("<Button-2>",perfectorbit)
 
 while True:
     if paused != True:
