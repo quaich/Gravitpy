@@ -305,7 +305,8 @@ def startoggle(): #make these shift all in one direction at some point
         for i in range(0,1000):
             for x in range(0,1): #make this variable
                 ran = random.randint(0,1000)
-                w.create_oval(ran,i,ran,i,outline="White",tags="star")
+                colourcode = random.randint(0,255)
+                w.create_oval(ran,i,ran,i,outline=('#%02x%02x%02x' % (colourcode,colourcode, colourcode)),tags="star")
         w.lower("star")
         stary["text"] = "Toggle Stars off"
 
@@ -387,15 +388,6 @@ def deltrail():
 
 
 
-
-
-for i in range(1,10):
-       lfill = "red"
-       if i == 5: lfill = "green"
-       w.create_line(100*i,0,100*i,1000,fill=lfill, dash = (4,4),tags="debug")
-       w.create_line(0,100*i,1000,100*i,fill=lfill, dash = (4,4),tags="debug")
-       w.create_line(0, 0, 1000, 1000, fill="red", dash=(4, 4),tags="debug")
-       w.create_line(0, 1000, 1000, 0, fill="red", dash=(4, 4),tags="debug")
 
 
 #------------------------------------------UI SECTION------------------------------------------#
