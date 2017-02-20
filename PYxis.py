@@ -14,9 +14,7 @@ import datetime #for delta time calculations
 #functions and variables
 #many of these variables can easily be locatlised.
 
-
 master = Tk() #master window
-alphabet=[]
 w = Canvas(master, width=1200, height=1000) #generate 1200x1000 canvas
 master.resizable(width=False,height=False)
 w.pack() #packdat
@@ -24,7 +22,6 @@ try:
        master.iconbitmap("icon.ico")
 except TclError:
        print("Icon not found. Continuing..")
-
 
 #constants
 G = 6.6742 #simplfied
@@ -104,7 +101,7 @@ def maths(objectxy,object2xy):
         else:
                theta = 0
         if -1 < radius < 1:
-               radius = 1
+               radius = 1 #no div by 0
         if b > 0:
                yn = True
         else:
@@ -149,35 +146,6 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     OBD[slot]["planet"] = w.create_oval(OBD[slot]["x0"],OBD[slot]["y0"],OBD[slot]["x1"],OBD[slot]["y1"],fill=(OBD[slot]["RGB"]),tags="oval")
     w.lower("oval")
     w.lower("star")
-
-def perfectorbit(event): #creates an perfect orbit around the selected planet ceteris paribus
-       global planetselected
-       global planetcolour
-       global speed
-       global mass
-       global density
-       objectcoords = [event.x,event.y]
-       object2coords = [(OBD[planetselected]["x0"] +  OBD[planetselected]["x1"])/2,(OBD[planetselected]["y0"]+ OBD[planetselected]["y1"])/2]
-       rad,theta,xneg,yneg= maths(objectcoords,object2coords)
-       if theta % 90 != 0:
-           planetradius = mass.get()/density.get()
-           createplanet(planetradius,float(mass.get()),objectcoords[0],objectcoords[1],planetcolour[0][0],planetcolour[0][1],planetcolour[0][2],0,0,theta)
-           vx,vy = physics((len(OBD)-1),planetselected,objectcoords,object2coords,OBD,speed)
-
-           OBD[len(OBD)-1]["dx"] = vy *mass.get()
-           OBD[len(OBD)-1]["dy"] = -vx  *mass.get()
-
-
-
-
-
-
-
-
-
-
-
-
 
 def colide(mainl,planets,radius):
     if radius < OBD[mainl]["radius"]:
@@ -386,10 +354,6 @@ def selectobject(event):
 def deltrail():
        w.delete("t")
 
-
-
-
-
 #------------------------------------------UI SECTION------------------------------------------#
 
 #Basic UI elements#
@@ -522,7 +486,7 @@ planetalivetime.set(0)
 showoffalive.configure(state="disabled")
 
 ###    TITLE    ###
-
+alphabet = []
 for alpha in range (65,91): alphabet.append(chr(alpha))  #something like that
 systemname = ("PYxis - System: {}{}-{}{}{}".format(alphabet[random.randint(0,25)],alphabet[random.randint(0,25)],random.randint(0,9),random.randint(0,9),random.randint(0,9))) #Standard string consentraition methods leave ugly curly brackets.
 master.wm_title(systemname)
@@ -535,7 +499,6 @@ w.bind("<Button-1>",clickfunct) #initial click
 w.bind("<B1-Motion>",motion) #click and drag
 w.bind("<ButtonRelease-1>",release) #release of click
 w.bind("<Button-3>",selectobject)
-w.bind("<Button-2>",perfectorbit)
 
 while True:
     if paused != True:
