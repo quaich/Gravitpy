@@ -1,6 +1,4 @@
-#TODO
-
-#1. Make UI OO
+#PYxis - Quaich 2016 - 2017
 
 #setup
 #Importing modules
@@ -10,7 +8,7 @@ from tkinter.colorchooser import *
 import time #needed for restriction of refresh rate (may not be needed)
 import math #needed for physics calculation
 import random #for some more fun parts of the program.
-import datetime #for delta time calculations
+#import datetime #for delta time calculations
 #functions and variables
 #many of these variables can easily be locatlised.
 
@@ -22,11 +20,12 @@ G = 6.6742 #simplfied
 OBD = [] #2D dictionary for planet variables
 poplist = []
 anchorlist = []
-
+edu = False
 def main():
+       ui.window.delete("educat")
        if len(OBD) > 1:
                for mainl in range(0,len(OBD)): #for more than one object
-                   if mainl not in anchorlist:   
+                   if mainl not in anchorlist:
                        x = 0
                        alone = True
                        for lines in range(len(OBD)):
@@ -44,7 +43,6 @@ def main():
 
 def solo(planetcolour):
     if 0 not in anchorlist:
-        #print(OBD[0])
         x = ((OBD[0]["x0"]+OBD[0]["x1"])/2)
         y = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
         ui.window.move(OBD[0]["planet"],OBD[0]["dx"],OBD[0]["dy"])
@@ -123,6 +121,15 @@ def physics(mainl,planets,objectxy,object2xy,OBD,speed):
               vx = accelerationx*cspeed
               vy = accelerationy*cspeed
               #Resolving (Down) (positive y)
+
+              #arrow for educationmode#
+              if edu == True and ui.planetselected == mainl:
+                     widthofline = abs((abs(vx) + abs(vy))*50)
+                     if widthofline > 15:
+                            widthofline = 20
+
+                     ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
+
               return(vx,vy)
 
 def Euler(objectxy,object2xy,mainl,planets,OBD,speed):
@@ -136,6 +143,7 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     global OBD
     OBD.append({"x0": x-rad,"y0": y-rad,"x1": x+rad, "y1": y+rad,"mass": mass,"RGB":('#%02x%02x%02x' % (int(R//1), int(G//1), int(B//1))),"dx":cx,"dy":cy,"lx":x,"ly":y,"radius":rad,"R":R,"G":G,"B":B,"planet":0,"alivetime":time.time(),"Theta":theta,"planetsdevoured":0})
     slot = (len(OBD)-1)
+
     OBD[slot]["planet"] = ui.window.create_oval(OBD[slot]["x0"],OBD[slot]["y0"],OBD[slot]["x1"],OBD[slot]["y1"],fill=(OBD[slot]["RGB"]),tags="oval")
     ui.window.lower("oval")
     ui.window.lower("star")
@@ -197,7 +205,7 @@ def release(event):
        ui.window.delete("shot")
        try:
               lmass = int(ui.mass.get()//1)
-              ldensity = int(ui.density.get()//1)       
+              ldensity = int(ui.density.get()//1)
               if lmass < ldensity:
                      lmass = ldensity *2
               radius = lmass / ldensity
@@ -251,6 +259,7 @@ def load(quick):
              for line in range(0,len(lines)):
                     temparray.append(lines[line])
              ui.window.delete("oval")
+             ui.window.delete("s")
              ###convert to float###
              for y in range(0,len(temparray)):
                      for x in range(len(temparray[y])):
@@ -265,8 +274,7 @@ def load(quick):
     except FileNotFoundError:
             print("FILE: No file was found.")
     except IndexError:
-            print("Invalid File.")
-    print(anchorlist)
+            print("FILE: Invalid File.")
 
 def save(quick):
     global OBD
@@ -280,7 +288,7 @@ def save(quick):
              else:
                     anchor = False
              array = [OBD[lines]["x0"],OBD[lines]["y0"],OBD[lines]["x1"],OBD[lines]["y1"],OBD[lines]["mass"],OBD[lines]["RGB"],OBD[lines]["dx"],OBD[lines]["dy"],OBD[lines]["lx"],OBD[lines]["ly"],OBD[lines]["radius"],OBD[lines]["R"],OBD[lines]["G"],OBD[lines]["B"],OBD[lines]["planet"],OBD[lines]["alivetime"],OBD[lines]["Theta"],OBD[lines]["planetsdevoured"],anchor]
-             for entitiy in array:   
+             for entitiy in array:
                  file.write(str(entitiy))
                  file.write(" ")
              file.write(" \n")
@@ -290,11 +298,8 @@ def popplanets():
     global OBD
     global poplist
     for planet in range(len(poplist)):
-        try:
-               ui.window.delete(OBD[poplist[planet]]["planet"])
-               OBD.pop(poplist[planet])
-        except:
-               print("Whoopsies")
+        ui.window.delete(OBD[poplist[planet]]["planet"])
+        OBD.pop(poplist[planet])
     poplist = []
 
 def selectobject(event):
@@ -318,7 +323,14 @@ def anchor():
               anchorlist.append(ui.planetselected)
        else:
               anchorlist.remove(ui.planetselected)
-       print(anchorlist)
+
+def educationmode():
+       global edu
+       if ui.education["text"] != "←":
+              ui.education["text"] = "←"
+       else:
+              ui.education["text"] = "ツ"
+       edu = not edu
 #------------------------------------------UI SECTION------------------------------------------#
 
 class userinterface():
@@ -330,7 +342,7 @@ class userinterface():
               try:
                      self.master.iconbitmap("icon.ico")
               except TclError:
-                     print("Icon not found. Continuing..")
+                     print("INFO: Icon not found. Continuing..")
 
               #Basic UI elements#
               self.starttime = time.time()
@@ -341,7 +353,7 @@ class userinterface():
               self.fps = self.window.create_text(150,30,fill = "White") #current FPS
               self.ox = 0
               self.oy = 0
-              
+
               #Pause related#
               self.tbp = False
               self.tbpc = False
@@ -349,7 +361,7 @@ class userinterface():
               self.prevpaused = False
               self.playp = Button(self.master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
               self.playp.place(x=1130,y=120,width=30,height=27)
-              
+
               #Delete trails#
               self.deltrailb = Button(self.master,text="Delete Trails",command=deltrail)
               self.deltrailb.place(x=1040,y=120,width=80)
@@ -358,8 +370,10 @@ class userinterface():
               self.planetcolour = ((255,0,0),"#FF0000") #default planetcolour
               self.colourchoose = Button(self.master,text="Select colour",command=lambda:getcolour())
               self.colourchoose.place(x=1040,y=300,width = 120)
-       
-              
+
+              self.education = Button(self.master,text="←",command=educationmode)
+              self.education.place(x=1075,y=90,width = 30)
+
               self.planetanchor = Button(self.master,text="⚓",command=anchor)
               self.planetanchor.place(x=1040,y=90,width = 30)
 
@@ -418,7 +432,7 @@ class userinterface():
               #Force Amplification
 
               self.speed = 1 #forceamp
-              self.window.create_text(1070,100,text="            Amp")
+              self.window.create_text(1090,80,text="Amp")
               self.speed = Scale(self.master,from_=1,to=2,resolution=0.01,variable=self.speed,orient=HORIZONTAL,length = 50,width=20,bg="light grey",highlightthickness=0)
               self.speed.place(x=1110,y=70)
               #Planet variable showing#
@@ -466,7 +480,7 @@ class userinterface():
               for alpha in range (65,91): alphabet.append(chr(alpha))  #something like that
               self.systemname = ("PYxis - System: {}{}-{}{}{}".format(alphabet[random.randint(0,25)],alphabet[random.randint(0,25)],random.randint(0,9),random.randint(0,9),random.randint(0,9))) #Standard string consentraition methods leave ugly curly brackets.
               self.master.wm_title(self.systemname)
-       
+
               ##Startoggle##
               self.startoggle()
        def startoggle(self): #make these shift all in one direction at some point
@@ -492,13 +506,13 @@ class userinterface():
                             self.oy = event.y
                             self.window.create_oval(event.x+(nmass/ndensity),event.y+(nmass/ndensity),event.x-(nmass/ndensity),event.y-(nmass/ndensity),fill=self.planetcolour[1],tags="shotoval")
               except TclError:
-                     print("Mass and/or density values are invalid.")
+                     print("ERROR: Mass and/or density values are invalid.")
        def motion(self,event):
               self.window.delete("shot")
               colour = self.planetcolour[1]
               if event.x < 1000:
                      self.window.create_line(self.ox,self.oy,event.x,event.y,fill=colour,tags="shot")
-                            
+
        def release(self,event):
            if event.x < 1000:
               x = event.x
@@ -508,7 +522,7 @@ class userinterface():
               self.window.delete("shot")
               try:
                      lmass = int(self.mass.get()//1)
-                     ldensity = int(self.density.get()//1)       
+                     ldensity = int(self.density.get()//1)
                      if lmass < ldensity:
                             lmass = ldensity
                             self.mass.set(lmass)
@@ -535,7 +549,7 @@ while True:
     if ui.planetselected in anchorlist:
           ui.planetanchor["text"] = "⛵"
     else:
-          ui.planetanchor["text"] = "⚓"   
+          ui.planetanchor["text"] = "⚓"
     if ui.paused != True:
            ui.window.itemconfig(ui.curtime,text=("Time",round(time.time() - ui.starttime,2)))
            ui.otime = time.time()
@@ -554,12 +568,14 @@ while True:
                   else: playpause(False)
            ##Selected planet attributes##
            if len(OBD) -1 > 0:
-                  ui.planetvelocity.set(math.sqrt(((OBD[ui.planetselected]["dx"])**2) +  ((OBD[ui.planetselected]["dy"])**2))*1000)
-                  ui.planetmass.set(OBD[ui.planetselected]["mass"])
-                  ui.planetdensity.set(OBD[ui.planetselected]["mass"] / OBD[ui.planetselected]["radius"])
-                  ui.planetalivetime.set(round(time.time() - OBD[ui.planetselected]["alivetime"]))
-                  ui.planetsdevoured.set(OBD[ui.planetselected]["planetsdevoured"])
-
+                  try:
+                         ui.planetvelocity.set(math.sqrt(((OBD[ui.planetselected]["dx"])**2) +  ((OBD[ui.planetselected]["dy"])**2))*1000)
+                         ui.planetmass.set(OBD[ui.planetselected]["mass"])
+                         ui.planetdensity.set(OBD[ui.planetselected]["mass"] / OBD[ui.planetselected]["radius"])
+                         ui.planetalivetime.set(round(time.time() - OBD[ui.planetselected]["alivetime"]))
+                         ui.planetsdevoured.set(OBD[ui.planetselected]["planetsdevoured"])
+                  except IndexError:
+                         pass #we can pass on this it means nothing important
            ##Move the planets in time with the rest of the program.##
            #I decided not to function this to save on calling globals##
            for number in range(0,len(OBD)):
