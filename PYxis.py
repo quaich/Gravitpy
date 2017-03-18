@@ -41,6 +41,7 @@ def main():
 
 def solo(planetcolour):
     if 0 not in anchorlist:
+        ui.planetselected = 0
         x = ((OBD[0]["x0"]+OBD[0]["x1"])/2)
         y = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
         ui.window.move(OBD[0]["planet"],OBD[0]["dx"]/OBD[0]["mass"],OBD[0]["dy"]/OBD[0]["mass"])
@@ -49,7 +50,8 @@ def solo(planetcolour):
         ny = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
         xy = [x,y]
         nxy = [nx,ny]
-        if ui.trailduration.get() > 0: drawtrail(xy,nxy,0)
+        if ui.trailduration.get() > 0:
+               drawtrail(xy,nxy,0)
 
 def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
         for planets in range(0,len(OBD)):
@@ -75,6 +77,7 @@ def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
                                                 poplist.append(tbd)
                                   except UnboundLocalError:
                                          pass
+                                  ui.window.lower("star") 
                                   break
                            Euler(objectxy,object2xy,mainl,planets,OBD,speed)
 
@@ -128,6 +131,7 @@ def physics(mainl,planets,objectxy,object2xy,OBD,speed):
                      line = ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
                      ui.window.lower(line)
                      ui.window.lower("oval")
+                     ui.window.lower("star")
               return(vx,vy)
 
 def Euler(objectxy,object2xy,mainl,planets,OBD,speed):
@@ -146,6 +150,8 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
     ui.window.lower("oval")
     ui.window.lower("star")
 
+
+
 def colide(mainl,planets,radius):
     if radius < OBD[mainl]["radius"]:
         ui.window.lower(OBD[planets]["planet"])
@@ -155,7 +161,8 @@ def colide(mainl,planets,radius):
         ui.window.lower(OBD[mainl]["planet"])
         if radius < OBD[planets]["radius"]:
                return True
-    else: return False
+    else:
+           return False
 
 ###UI Related subroutines###
 
@@ -552,6 +559,8 @@ class userinterface():
                             lmass = ldensity
                             self.mass.set(lmass)
                      radius = lmass / ldensity
+                     if radius > 250:
+                            radius = 250
                      end = [x,y]
                      start = [self.ox,self.oy]
                      rad,theta,xneg,yneg = maths(start,end)
@@ -561,6 +570,14 @@ class userinterface():
               except TclError:
                      pass
            self.window.delete("shotoval")
+       def select(self,number):
+                      if self.planetselected > len(OBD)-1: #if planet is rip
+                             self.planetselected = 0
+                      if number == self.planetselected:
+                         self.window.delete("s")
+                         self.selected = self.window.coords(OBD[number]["planet"])
+                         self.selectoval = self.window.create_oval(self.selected[0]-10,self.selected[1]-10,self.selected[2]+10,self.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
+                         self.window.lower(self.selectoval)
 ui = userinterface()
 
 #------------------------------------------UI SECTION END--------------------------------------#
@@ -606,18 +623,7 @@ while True:
            ##Move the planets in time with the rest of the program.##
            #I decided not to function this to save on calling globals##
            for number in range(0,len(OBD)):
-                     if number == ui.planetselected:
-                         ui.window.delete("s")
-                         ui.selected = ui.window.coords(OBD[number]["planet"])
-                         try:
-                             ui.selectoval = ui.window.create_oval(ui.selected[0]-10,ui.selected[1]-10,ui.selected[2]+10,ui.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
-                             ui.window.lower(ui.selectoval)
-                         except IndexError:
-                             print("INFO : Planet was destroyed, defaulting to 0.")
-                             try:
-                                  ui.planetselected = 0
-                             except IndexError:
-                                 print("INFO : All planets are destroyed.")
+                     ui.select(number)
                      if number not in anchorlist:
                             ui.window.move(OBD[number]["planet"],OBD[number]["dx"],OBD[number]["dy"])
                             oldxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
@@ -631,3 +637,4 @@ while True:
            except ZeroDivisionError:
                   pass #if the time change is too low
     ui.window.update()
+    print(ui.planetselected)
