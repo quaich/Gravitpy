@@ -1,4 +1,4 @@
-#PYxis - Quaich 2016 - 2017
+#PYxis: Quaich 2016 - 2017
 
 #setup
 #Importing modules
@@ -22,11 +22,9 @@ poplist = []
 anchorlist = []
 edu = False
 def main():
-       ui.window.delete("educat")
        if len(OBD) > 1:
                for mainl in range(0,len(OBD)): #for more than one object
                    if mainl not in anchorlist:
-                       x = 0
                        alone = True
                        for lines in range(len(OBD)):
                             if mainl != lines:
@@ -45,7 +43,7 @@ def solo(planetcolour):
     if 0 not in anchorlist:
         x = ((OBD[0]["x0"]+OBD[0]["x1"])/2)
         y = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
-        ui.window.move(OBD[0]["planet"],OBD[0]["dx"],OBD[0]["dy"])
+        ui.window.move(OBD[0]["planet"],OBD[0]["dx"]/OBD[0]["mass"],OBD[0]["dy"]/OBD[0]["mass"])
         OBD[0]["x0"],OBD[0]["y0"],OBD[0]["x1"],OBD[0]["y1"] = ui.window.coords(OBD[0]["planet"])
         nx = ((OBD[0]["x0"]+OBD[0]["x1"])/2)
         ny = ((OBD[0]["y0"]+OBD[0]["y1"])/2)
@@ -74,16 +72,15 @@ def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
 
                                   try:
                                          if tbd not in poplist and tbnd not in poplist:
-                                             poplist.append(tbd)
-                                  except UnboundLocalError: pass
+                                                poplist.append(tbd)
+                                  except UnboundLocalError:
+                                         pass
                                   break
                            Euler(objectxy,object2xy,mainl,planets,OBD,speed)
 
 def maths(objectxy,object2xy):
         a = int(objectxy[0] - object2xy[0])
         b = int(objectxy[1] - object2xy[1])
-        xn = False
-        yn = False
         radius = math.sqrt((a**2) + (b**2)) #Pythagorus theorem
         if radius != 0:
                if a == 0:
@@ -91,7 +88,7 @@ def maths(objectxy,object2xy):
                else:
                       theta = abs(math.atan(b/a))
         else:
-               theta = 0
+               theta = 0       
         if -1 < radius < 1:
                radius = 1 #no div by 0
         if b > 0:
@@ -124,12 +121,13 @@ def physics(mainl,planets,objectxy,object2xy,OBD,speed):
 
               #arrow for educationmode#
               if edu == True and ui.planetselected == mainl:
-                     widthofline = abs((abs(vx) + abs(vy))*50)
-                     if widthofline > 15:
+                     widthofline = abs((abs(vx) + abs(vy))*500)
+                     if widthofline > 20:
                             widthofline = 20
 
-                     ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
-
+                     line = ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
+                     ui.window.lower(line)
+                     ui.window.lower("oval")
               return(vx,vy)
 
 def Euler(objectxy,object2xy,mainl,planets,OBD,speed):
@@ -161,19 +159,12 @@ def colide(mainl,planets,radius):
 
 ###UI Related subroutines###
 
-def trailtoggle():
-    global trail
-    if trailbutton["text"] == "Toggle Trail on":
-           trailbutton["text"] = "Toggle Trail off"
-    else:
-           trailbutton["text"] = "Toggle Trail on"
-    trail = not trail
-
 def drawtrail(prevxy,objectxy,mainl):
-       trail = ui.window.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBD[mainl]["RGB"],tags="t")
-       ui.window.lower(trail)
-       if ui.trailduration.get() != 20:
-               ui.master.after(int((ui.trailduration.get())*1000),lambda:ui.window.delete(trail))
+       if 0 < objectxy[0] < 1000 and 0 < objectxy[1] < 1000: #no point drawing things the user wont see.
+              trail = ui.window.create_line(prevxy[0],prevxy[1],objectxy[0],objectxy[1],fill=OBD[mainl]["RGB"],tags="t")
+              ui.window.lower(trail)
+              if ui.trailduration.get() != 20:
+                     ui.master.after(int((ui.trailduration.get())*1000),lambda:ui.window.delete(trail))
 
 def playpause(colourc):
        if colourc == True:
@@ -195,29 +186,6 @@ def safetypause(colourc):
               ui.tbp = False
        else:
               ui.tbp = True
-
-def release(event):
-    if event.x < 1000:
-       x = event.x
-       y = event.y
-       cx = event.x - ox
-       cy = event.y - oy
-       ui.window.delete("shot")
-       try:
-              lmass = int(ui.mass.get()//1)
-              ldensity = int(ui.density.get()//1)
-              if lmass < ldensity:
-                     lmass = ldensity *2
-              radius = lmass / ldensity
-              end = [x,y]
-              start = [ui.ox,ui.oy]
-              rad,theta,xneg,yneg= maths(start,end)
-              vx = cx /(rad)
-              vy = cy /(rad)
-              createplanet(round(radius),lmass,ui.ox,ui.oy,ui.planetcolour[0][0],ui.planetcolour[0][1],ui.planetcolour[0][2],vx,vy,theta)
-       except TclError:
-              pass
-    ui.window.delete("shotoval")
 
 def getcolour():
     ui.prevpaused = ui.paused
@@ -281,7 +249,11 @@ def save(quick):
     if quick == True:
            file = open("tmp.pyx","w")
     else:
-           file = filedialog.asksaveasfile(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to save",defaultextension=".gpy")
+           try:
+                  file = filedialog.asksaveasfile(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to save",defaultextension=".gpy")
+           except AttributeError:
+                  pass #User closed the window.
+              
     for lines in range(len(OBD)):
              if lines in anchorlist:
                     anchor = True
@@ -331,6 +303,56 @@ def educationmode():
        else:
               ui.education["text"] = "ツ"
        edu = not edu
+## Section on 
+class stack():
+        def __init__(self,Maxlength,Maxwidth):
+              self.StackArray = [["n" for x in range(19)] for y in range(Maxlength)]#(Y,X) #2d array for planet variables and a part to represent why it was added.
+              #d = Deleted #c = created #m = moved etc
+              self.StackMaximum = Maxlength -1
+              self.StackPointer = -1
+              self.CurrentData = ""
+        def pop(self):
+              if not self.isEmpty():
+                     self.CurrentData = self.StackArray[self.StackPointer]
+                     self.StackPointer += -1
+              else:
+                     print("Stack Empty.")
+        def push(self,Data):
+              if not self.isFull():
+                     self.StackPointer += 1
+                     self.StackArray[self.StackPointer] = Data
+              else:
+                     print("Stack Full.")
+        def peek(self):
+              print(self.StackArray[self.StackPointer])
+        def isFull(self):
+               if self.StackPointer >= self.StackMaximum:
+                     return True
+               else:
+                     return False
+        def isEmpty(self):
+               if self.StackPointer < 0:
+                      return True
+               else:
+                      return False
+            
+        def printStack(self):
+               print("------------------------------------------------------------------------------------------------")
+               for y in range(len(self.StackArray)):
+                      print("|",self.StackArray[self.StackMaximum - y],"|")
+
+def undo():
+       #grab array that contains the previous valuess
+       returnvalues = mainstack.peek()
+       mainstack.pop()
+       createplanet(returnvalues[10],returnvalues[4],(returnvalues[0]+returnvalues[2])/2,(returnvalues[1]+returnvalues[3])/2,returnvalues[11],returnvalues[12],returnvalues[13],returnvalues[6],returnvalues[7],returnvalues[16])
+       #append it to the stack
+#def redo():
+       
+#def showtrajectories():
+
+#def delete():
+       
 #------------------------------------------UI SECTION------------------------------------------#
 
 class userinterface():
@@ -363,7 +385,7 @@ class userinterface():
               self.playp.place(x=1130,y=120,width=30,height=27)
 
               #Delete trails#
-              self.deltrailb = Button(self.master,text="Delete Trails",command=deltrail)
+              self.deltrailb = Button(self.master,text="Delete Trails",command=deltrail,fg="green",activeforeground="green")
               self.deltrailb.place(x=1040,y=120,width=80)
 
               #Planet colour chooser#
@@ -391,7 +413,7 @@ class userinterface():
               self.quicksavefunct.place(x=1030,y=385,width=70)
 
               #toggle stars#
-              self.stary = Button(self.master, text="Toggle Stars on", command=self.startoggle)
+              self.stary = Button(self.master, text="Toggle Stars on", command=self.startoggle,fg="Green")
               self.stary.place(x=1040,y=150,width=120)
 
               ###Planet specific variables###
@@ -487,14 +509,17 @@ class userinterface():
               if self.stary["text"] == "Toggle Stars off":
                      self.window.delete("star")
                      self.stary["text"] = "Toggle Stars on"
+                     self.stary.config(fg="Red",activeforeground="Red")
               else:
                      for i in range(0,1000):
                             for x in range(0,1): #make this variable
                                    ran = random.randint(0,1000)
                                    colourcode = random.randint(0,255)
-                                   self.window.create_oval(ran,i,ran,i,outline=('#%02x%02x%02x' % (colourcode,colourcode, colourcode)),tags="star")
-                     self.window.lower("star")
+                                   self.window.create_oval(ran,i,ran,i,outline=('#%02x%02x%02x' % (colourcode,colourcode, colourcode)),tags="star")   
                      self.stary["text"] = "Toggle Stars off"
+                     self.stary.config(fg="Green",activeforeground="Green")
+
+              self.window.lower("star")
        def clickfunct(self,event):
               try:
                      floatmass = float(self.mass.get())
@@ -511,7 +536,7 @@ class userinterface():
               self.window.delete("shot")
               colour = self.planetcolour[1]
               if event.x < 1000:
-                     self.window.create_line(self.ox,self.oy,event.x,event.y,fill=colour,tags="shot")
+                     self.window.create_line(self.ox,self.oy,event.x,event.y,fill=colour,tags="shot",arrow="last")
 
        def release(self,event):
            if event.x < 1000:
@@ -546,6 +571,8 @@ ui.window.bind("<ButtonRelease-1>",ui.release) #release of click
 ui.window.bind("<Button-3>",selectobject)
 
 while True:
+    ui.window.delete("educat")
+    #ui.window.lower("star")    
     if ui.planetselected in anchorlist:
           ui.planetanchor["text"] = "⛵"
     else:
@@ -556,8 +583,8 @@ while True:
            if len(poplist) > 0:
                popplanets()
            main()
-
-
+           ui.trailduration.config(fg='#%02x%02x%02x' % (round((255/20)*ui.trailduration.get()),0,0))
+              
            ##Pause safely##
            if ui.tbp == True or ui.tbpc == True:
                   if ui.tbpc == True:
@@ -600,7 +627,7 @@ while True:
                             if ui.trailduration.get() > 0:
                                    drawtrail(oldxy,newxy,number)
            try:
-                  ui.window.itemconfig(ui.fps,text=("FPS:", round(1/(time.time()-ui.otime))))
+                  ui.window.itemconfig(ui.fps,text=("FPS:", round(1/(time.time()-ui.otime)/10)))
            except ZeroDivisionError:
                   pass #if the time change is too low
     ui.window.update()
