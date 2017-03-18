@@ -1,4 +1,4 @@
-#PYxis - Python3 2D Celestial simulation.
+# PYxis - Python3 2D Celestial simulation.
 
 This project was created for my A-Level Edexcel Computer Science coursework.
 
