@@ -637,4 +637,3 @@ while True:
            except ZeroDivisionError:
                   pass #if the time change is too low
     ui.window.update()
-    print(ui.planetselected)
