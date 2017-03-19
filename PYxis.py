@@ -61,7 +61,7 @@ def calculatedeltaXY(G,objectxy,mainl,OBD,speed):
                            ###Essentialy the collision detection###
                            radius,theta,xn,yn = maths(objectxy,object2xy)
                            if colide(mainl,planets,radius) == True:
-                                  if OBD[mainl]["radius"] >= OBD[planets]["radius"] and planets not in poplist:
+                                  if OBD[mainl]["radius"] >= OBD[planets]["radius"] and planets not in poplist: #condense this bit
                                          tbd = planets
                                          tbnd = mainl
                                          OBD[mainl]["mass"] += OBD[planets]["mass"]
@@ -183,7 +183,6 @@ def playpause(colourc):
            else:
                   ui.playp["text"] = "▐▐  "
            ui.paused = not ui.paused
-       ui.window.update()
 
 def safetypause(colourc):
        if ui.paused == True:
@@ -562,20 +561,20 @@ class userinterface():
                      end = [x,y]
                      start = [self.ox,self.oy]
                      rad,theta,xneg,yneg = maths(start,end)
-                     vx = cx /(rad)
-                     vy = cy /(rad)
+                     vx = cx / lmass
+                     vy = cy / lmass
                      createplanet(round(radius),lmass,self.ox,self.oy,self.planetcolour[0][0],self.planetcolour[0][1],self.planetcolour[0][2],vx,vy,theta)
               except TclError:
                      pass
            self.window.delete("shotoval")
        def select(self,number):
-                      if self.planetselected > len(OBD)-1: #if planet is rip
-                             self.planetselected = 0
+                      if self.planetselected > len(OBD) - 1: #if planet is rip
+                                self.planetselected = 0
                       if number == self.planetselected:
-                         self.window.delete("s")
-                         self.selected = self.window.coords(OBD[number]["planet"])
-                         self.selectoval = self.window.create_oval(self.selected[0]-10,self.selected[1]-10,self.selected[2]+10,self.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
-                         self.window.lower(self.selectoval)
+                                self.window.delete("s")
+                                self.selected = self.window.coords(OBD[number]["planet"])
+                                self.selectoval = self.window.create_oval(self.selected[0]-10,self.selected[1]-10,self.selected[2]+10,self.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
+                                self.window.lower(self.selectoval)
 ui = userinterface()
 
 #------------------------------------------UI SECTION END--------------------------------------#
