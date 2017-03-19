@@ -14,7 +14,7 @@ import random #for some more fun parts of the program.
 
 
 #constants
-G = 6.6742 #simplfied
+G = 6.6741 #simplfied
 
 #2d arrays
 OBD = [] #2D dictionary for planet variables
@@ -155,12 +155,10 @@ def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
 def colide(mainl,planets,radius):
     if radius < OBD[mainl]["radius"]:
         ui.window.lower(OBD[planets]["planet"])
-        if radius < OBD[mainl]["radius"]:
-               return True
+        return True
     elif radius < OBD[planets]["radius"]:
         ui.window.lower(OBD[mainl]["planet"])
-        if radius < OBD[planets]["radius"]:
-               return True
+        return True
     else:
            return False
 
