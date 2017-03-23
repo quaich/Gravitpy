@@ -103,6 +103,7 @@ def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
             line = ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
             ui.window.lower(line)
             ui.window.lower("oval")
+            ui.window.lower("t")
             ui.window.lower("star")
         return(vx,vy)
 
