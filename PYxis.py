@@ -40,7 +40,7 @@ def main():
                                 tbd = planet1
                                 tbnd = planet2
                                 OBD[planet2]["mass"] += OBD[planet1]["mass"]
-                                OBD[planet2]["planet2devoured"] += 1
+                                OBD[planet2]["planetsdevoured"] += 1
 
                             try:
                                 if tbd not in poplist and tbnd not in poplist:
@@ -77,9 +77,9 @@ def maths(objectxy,object2xy):
     return(radius,theta,xn,yn)
 
 def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
-    radius,theta,xn,yn = maths(objectxy,object2xy)
-    if radius != 0:
-        Fgrav = ((G*(int(OBD[planet1]["mass"])*(int(OBD[planet2]["mass"]))))/radius**2) / OBD[planet1]["mass"]
+    radiusbetweenplanets,theta,xn,yn = maths(objectxy,object2xy)
+    if radiusbetweenplanets != 0:
+        Fgrav = ((G*(int(OBD[planet1]["mass"])*(int(OBD[planet2]["mass"]))))/radiusbetweenplanets**2) / OBD[planet1]["mass"]
         if xn == True:
             accelerationx = -(Fgrav*math.cos(theta))
         else:
@@ -90,8 +90,8 @@ def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
             accelerationy = Fgrav*math.sin(theta)
         cspeed = (speed.get()/1000)
         #Resolving (Right) (positive x)
-        vx = accelerationx*cspeed
-        vy = accelerationy*cspeed
+        vx = accelerationx*cspeed #Mass is not used here because it results in a more "exaggerated" but more workable interactions. 
+        vy = accelerationy*cspeed #Essentially removes the need for larger numbers.
         #Resolving (Down) (positive y)
 
         #arrow for educationmode#
@@ -101,7 +101,7 @@ def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
             if widthofline > 20:
                 widthofline = 20
             line = ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
-            ui.window.lower(line)
+            ui.window.lower(line) #correct the ordering of objects. 
             ui.window.lower("oval")
             ui.window.lower("t")
             ui.window.lower("star")
@@ -114,7 +114,6 @@ def Euler(objectxy,object2xy,planet1,planet2,OBD,speed):
     OBD[planet1]["dy"] += vy
 
 def createplanet(rad,mass,x,y,R,G,B,cx,cy,theta,undo,id):
-    global planetcolour
     global OBD
     OBD.append({"x0": x-rad,"y0": y-rad,"x1": x+rad, "y1": y+rad,"mass": mass,"RGB":('#%02x%02x%02x' % (int(R//1), int(G//1), int(B//1))),"dx":cx,"dy":cy,"lx":x,"ly":y,"radius":rad,"R":R,"G":G,"B":B,"planet":0,"alivetime":time.time(),"Theta":theta,"planetsdevoured":0})
     slot = (len(OBD)-1)
@@ -135,7 +134,8 @@ def deleteplanet(mod,undo):
         poplist.append(mod)
         if mod in anchorlist:
             anchorlist.pop(anchorlist.index(mod))
-        ui.window.delete("s")
+        if mod == ui.planetselected:
+            ui.window.delete("s")
 
     except IndexError:
         pass #deleting something that doesnt exist doesn't matter. Like wise, if the undo mod isnt found it will throw a IndexError.
@@ -174,17 +174,17 @@ def playpause(colourc):
 def safetypause(colourc):
     if ui.paused == True:
         playpause(colourc)
-        ui.tbp = False
+        ui.tobepaused = False
     else:
-        ui.tbp = True
+        ui.tobepaused = True
 
 def getcolour():
     ui.prevpaused = ui.paused
     if ui.paused == True:
         askcolour(ui.prevpaused)
-        ui.tbpc = False
+        ui.tobepausedcolour = False
     else:
-        ui.tbpc = True
+        ui.tobepausedcolour = True
 
 def askcolour(prevpaused):
     ui.planetcolour = askcolor()
@@ -196,8 +196,6 @@ def askcolour(prevpaused):
 ###LOAD AND SAVE SYSTEM###
 def load(quick):
     #variables to be edited#
-    global OBD
-    global anchorlist
     sfile = ""
     if quick == False:
         file = filedialog.askopenfilename(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to load")
@@ -211,8 +209,13 @@ def load(quick):
             ui.master.wm_title(systemname)
             ui.window.delete("t")
             ###Delete array###
-            OBD = []
+            for lines in range(len(OBD)):
+                print(OBD[lines])
+                deleteplanet(lines,False)
+            popplanets()     
+            print(poplist)
             anchorlist = []
+
             ###set array to the file###
             lines = [line.split() for line in load]
             for line in range(0,len(lines)):
@@ -228,7 +231,7 @@ def load(quick):
                         pass #cant convert strings to float
         for lines in range(0,len(temparray)):
             createplanet(temparray[lines][10],temparray[lines][4],((temparray[lines][0]+temparray[lines][2])/2),((temparray[lines][1]+temparray[lines][3])/2),temparray[lines][11],temparray[lines][12],temparray[lines][13],temparray[lines][6],temparray[lines][7],0,False,0)
-            if temparray[lines][18] == "True": #saves the data as string
+            if temparray[lines][17] == "True": #saves the data as string
                 anchorlist.append(lines)
     except FileNotFoundError:
         print("FILE: No file was found.")
@@ -250,7 +253,7 @@ def save(quick):
             anchor = True
         else:
             anchor = False
-        array = [OBD[lines]["x0"],OBD[lines]["y0"],OBD[lines]["x1"],OBD[lines]["y1"],OBD[lines]["mass"],OBD[lines]["RGB"],OBD[lines]["dx"],OBD[lines]["dy"],OBD[lines]["lx"],OBD[lines]["ly"],OBD[lines]["radius"],OBD[lines]["R"],OBD[lines]["G"],OBD[lines]["B"],OBD[lines]["planet"],OBD[lines]["alivetime"],OBD[lines]["Theta"],OBD[lines]["planetsdevoured"],anchor]
+        array = [OBD[lines]["x0"],OBD[lines]["y0"],OBD[lines]["x1"],OBD[lines]["y1"],OBD[lines]["mass"],OBD[lines]["RGB"],OBD[lines]["dx"],OBD[lines]["dy"],OBD[lines]["lx"],OBD[lines]["ly"],OBD[lines]["radius"],OBD[lines]["R"],OBD[lines]["G"],OBD[lines]["B"],OBD[lines]["alivetime"],OBD[lines]["Theta"],OBD[lines]["planetsdevoured"],anchor]
         for entitiy in array:
             file.write(str(entitiy))
             file.write(" ")
@@ -258,8 +261,13 @@ def save(quick):
     file.close()
 
 def popplanets():
-    global OBD
+    #global OBD
     global poplist
+    
+    poplist = sorted(poplist) #Delete highest first so that the indexes for the lower ones do not get changed.
+    poplist.reverse()
+    print(poplist)
+    
     for planet in range(len(poplist)):
         try:
             ui.window.delete(OBD[poplist[planet]]["planet"])
@@ -278,7 +286,8 @@ def selectobject(event):
             for i in range(0,len(OBD)):
                 if coords == [OBD[i]["x0"],OBD[i]["y0"],OBD[i]["x1"],OBD[i]["y1"]]:
                     ui.planetselected = i
-    except: pass
+    except:
+        pass
 def deltrail():
     ui.window.delete("t")
 
@@ -299,8 +308,7 @@ def educationmode():
 ## Section on
 class stack():
     def __init__(self,Maxlength,Maxwidth):
-        self.StackArray = [["" for x in range(20)] for y in range(Maxlength)]#(Y,X) #2d array for planet variables and a part to represent why it was added.
-        #d = Deleted #c = created #m = moved etc
+        self.StackArray = [["" for x in range(20)] for y in range(Maxlength)]#(Y,X) #2d array for planet variables and [0] to represent why it was added.
         self.StackMaximum = Maxlength -1
         self.StackPointer = -1
         self.CurrentData = []
@@ -309,14 +317,10 @@ class stack():
         if not self.isEmpty():
             self.CurrentData = self.StackArray[self.StackPointer]
             self.StackPointer += -1
-        else:
-            print("Stack Empty.")
     def push(self,Data):
         if not self.isFull():
             self.StackPointer += 1
             self.StackArray[self.StackPointer] = Data
-        else:
-            print("Stack Full.")
     def peek(self):
         print(self.StackArray[self.StackPointer])
     def isFull(self):
@@ -387,8 +391,8 @@ class userinterface():
         self.oy = 0
         self.otime = time.time()
         #Pause related#
-        self.tbp = False
-        self.tbpc = False
+        self.tobepaused = False
+        self.tobepausedcolour = False
         self.paused = False
         self.prevpaused = False
         self.playp = Button(self.master,text="▐▐  ", command =lambda:safetypause(False),font=("Helvetica", 12))
@@ -463,9 +467,9 @@ class userinterface():
 
         #Force Amplification
 
-        self.speed = 1 #forceamp
+        self.speed = 1 #force amplification
         self.window.create_text(1090,80,text="Amp")
-        self.speed = Scale(self.master,from_=1,to=2,resolution=0.01,variable=self.speed,orient=HORIZONTAL,length = 50,width=20,bg="light grey",highlightthickness=0)
+        self.speed = Scale(self.master,from_=1,to=5,resolution=0.01,variable=self.speed,orient=HORIZONTAL,length = 50,width=20,bg="light grey",highlightthickness=0)
         self.speed.place(x=1110,y=70)
         #Planet variable showing#
         self.planetselected = 0
@@ -507,11 +511,11 @@ class userinterface():
         self.planetalivetime.set(0)
         self.showoffalive.configure(state="disabled")
 
-        #undo shit
+        #undo 
         self.undo = Button(self.master,text="⟲",command=mainstack.undo,width = 2,height=-5,font=("Helvetica",10))
         self.undo.place(x=1070,y=15)
 
-        #redo shit
+        #redo 
         self.redo = Button(self.master,text="⟳",command=mainstack.redo,width=2,height=1,font=("Helvetica",10))
         self.redo.place(x=1110,y=15)
 
@@ -524,10 +528,10 @@ class userinterface():
         self.master.wm_title(self.systemname)
 
         ##Startoggle##
-        #debug shit
+        #debug 
 
-        self.stackprint = Button(self.master,text="printstack",command=lambda: mainstack.printStack(),fg="green",activeforeground="green")
-        self.stackprint.place(x=1140,y=18)
+        #self.stackprint = Button(self.master,text="printstack",command=lambda: mainstack.printStack(),fg="green",activeforeground="green")
+        #self.stackprint.place(x=1140,y=18)
 
         #self.startoggle()
     def startoggle(self): #make these shift all in one direction at some point
@@ -588,15 +592,15 @@ class userinterface():
             except TclError:
                 pass
         self.window.delete("shotoval")
-    def select(self,number):
+    def select(self,line):
         if self.planetselected > len(OBD) - 1: #if planet is rip
             self.planetselected = 0
-        if number == self.planetselected:
+        if line == self.planetselected:
             self.window.delete("s")
-            self.selected = self.window.coords(OBD[number]["planet"])
+            self.selected = self.window.coords(OBD[line]["planet"])
             self.selectoval = self.window.create_oval(self.selected[0]-10,self.selected[1]-10,self.selected[2]+10,self.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
             self.window.lower(self.selectoval)
-
+    
 ui = userinterface()
 
 def updateUI():
@@ -621,12 +625,12 @@ def updateUI():
     ui.otime = time.time()
 
 def safepause():
-    if ui.tbp == True or ui.tbpc == True:
-        if ui.tbpc == True:
+    if ui.tobepaused == True or ui.tobepausedcolour == True:
+        if ui.tobepausedcolour == True:
             playpause(True) 
             askcolour(ui.prevpaused)
             playpause(False)
-            ui.tbpc = False
+            ui.tobepausedcolour = False
         else: playpause(False)
 
 #keybinds
@@ -646,16 +650,16 @@ while True:
         safepause()
         ##Move the planets in time with the rest of the program.##
         #I decided not to function this to save on calling globals##
-        for number in range(0,len(OBD)):
-            ui.select(number)
-            if number not in anchorlist:
-                ui.window.move(OBD[number]["planet"],OBD[number]["dx"],OBD[number]["dy"])
-                oldxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
+        for line in range(0,len(OBD)):
+            ui.select(line)
+            if line not in anchorlist:
+                ui.window.move(OBD[line]["planet"],OBD[line]["dx"],OBD[line]["dy"])
+                oldxy = [((OBD[line]["x0"]+OBD[line]["x1"])/2),((OBD[line]["y0"]+OBD[line]["y1"])/2)]
                 try:
-                    OBD[number]["x0"],OBD[number]["y0"],OBD[number]["x1"],OBD[number]["y1"]= ui.window.coords(OBD[number]["planet"])
+                    OBD[line]["x0"],OBD[line]["y0"],OBD[line]["x1"],OBD[line]["y1"]= ui.window.coords(OBD[line]["planet"])
                 except ValueError:
                     pass
-                newxy = [((OBD[number]["x0"]+OBD[number]["x1"])/2),((OBD[number]["y0"]+OBD[number]["y1"])/2)]
+                newxy = [((OBD[line]["x0"]+OBD[line]["x1"])/2),((OBD[line]["y0"]+OBD[line]["y1"])/2)]
                 if ui.trailduration.get() > 0:
-                    drawtrail(oldxy,newxy,number)
+                    drawtrail(oldxy,newxy,line)
     ui.window.update()
