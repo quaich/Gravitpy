@@ -80,17 +80,16 @@ def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
     radiusbetweenplanets,theta,xn,yn = maths(objectxy,object2xy)
     if radiusbetweenplanets != 0:
         Fgrav = ((G*(int(OBD[planet1]["mass"])*(int(OBD[planet2]["mass"]))))/radiusbetweenplanets**2) / OBD[planet1]["mass"]
+        accelerationx = Fgrav*math.cos(theta)
+        accelerationy = Fgrav*math.sin(theta)
         if xn == True:
-            accelerationx = -(Fgrav*math.cos(theta))
-        else:
-            accelerationx = Fgrav*math.cos(theta)
+            accelerationx = -(accelerationx)
         if yn == True:
-            accelerationy = -(Fgrav*math.sin(theta))
-        else:
-            accelerationy = Fgrav*math.sin(theta)
+            accelerationy = -(accelerationy)
+
         cspeed = (speed.get()/1000)
         #Resolving (Right) (positive x)
-        vx = accelerationx*cspeed #Mass is not used here because it results in a more "exaggerated" but more workable interactions. 
+        vx = accelerationx*cspeed #Mass is not used here because it results in a more "exaggerated" but more workable interactions.
         vy = accelerationy*cspeed #Essentially removes the need for larger numbers.
         #Resolving (Down) (positive y)
 
@@ -101,7 +100,7 @@ def physics(planet1,planet2,objectxy,object2xy,OBD,speed):
             if widthofline > 20:
                 widthofline = 20
             line = ui.window.create_line(objectxy[0],objectxy[1],object2xy[0],object2xy[1],width = widthofline,fill = "White",tag="educat",arrow="last")
-            ui.window.lower(line) #correct the ordering of objects. 
+            ui.window.lower(line) #correct the ordering of objects.
             ui.window.lower("oval")
             ui.window.lower("t")
             ui.window.lower("star")
@@ -133,18 +132,19 @@ def deleteplanet(mod,undo):
             mainstack.push(tba)
         poplist.append(mod)
         if mod in anchorlist:
-            anchorlist.pop(anchorlist.index(mod))
+            anchorlist.remove(anchorlist.index(mod))
         if mod == ui.planetselected:
             ui.window.delete("s")
+            ui.planetselected = 0
 
     except IndexError:
         pass #deleting something that doesnt exist doesn't matter. Like wise, if the undo mod isnt found it will throw a IndexError.
 def colide(planet1,planet2,radius):
-    if radius < OBD[planet1]["radius"]:
-        ui.window.lower(OBD[planet2]["planet"])
-        return True
-    elif radius < OBD[planet2]["radius"]:
-        ui.window.lower(OBD[planet1]["planet"])
+    if radius <  OBD[planet2]["radius"] + OBD[planet1]["radius"]:
+        if radius < OBD[planet2]["radius"]:
+            ui.window.lower(OBD[planet2]["planet"])
+        else:
+            ui.window.lower(OBD[planet1]["planet"])
         return True
     else:
         return False
@@ -196,9 +196,11 @@ def askcolour(prevpaused):
 ###LOAD AND SAVE SYSTEM###
 def load(quick):
     #variables to be edited#
-    sfile = ""
     if quick == False:
-        file = filedialog.askopenfilename(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to load")
+        try:
+            file = filedialog.askopenfilename(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to load")
+        except AttributeError:
+            pass #User closed the window.
     else:
         file =".tmp.pyx"
     try:
@@ -210,12 +212,9 @@ def load(quick):
             ui.window.delete("t")
             ###Delete array###
             for lines in range(len(OBD)):
-                print(OBD[lines])
                 deleteplanet(lines,False)
-            popplanets()     
-            print(poplist)
+            popplanets()
             anchorlist = []
-
             ###set array to the file###
             lines = [line.split() for line in load]
             for line in range(0,len(lines)):
@@ -247,7 +246,6 @@ def save(quick):
             file = filedialog.asksaveasfile(filetypes=[(".pyx Format","*.pyx")],title="Choose a file to save",defaultextension=".gpy")
         except AttributeError:
             pass #User closed the window.
-
     for lines in range(len(OBD)):
         if lines in anchorlist:
             anchor = True
@@ -261,13 +259,9 @@ def save(quick):
     file.close()
 
 def popplanets():
-    #global OBD
     global poplist
-    
     poplist = sorted(poplist) #Delete highest first so that the indexes for the lower ones do not get changed.
     poplist.reverse()
-    print(poplist)
-    
     for planet in range(len(poplist)):
         try:
             ui.window.delete(OBD[poplist[planet]]["planet"])
@@ -287,7 +281,7 @@ def selectobject(event):
                 if coords == [OBD[i]["x0"],OBD[i]["y0"],OBD[i]["x1"],OBD[i]["y1"]]:
                     ui.planetselected = i
     except:
-        pass
+        pass #planet is unavailable
 def deltrail():
     ui.window.delete("t")
 
@@ -305,7 +299,7 @@ def educationmode():
     else:
         ui.education["text"] = "ツ"
     edu = not edu
-## Section on
+
 class stack():
     def __init__(self,Maxlength,Maxwidth):
         self.StackArray = [["" for x in range(20)] for y in range(Maxlength)]#(Y,X) #2d array for planet variables and [0] to represent why it was added.
@@ -511,11 +505,11 @@ class userinterface():
         self.planetalivetime.set(0)
         self.showoffalive.configure(state="disabled")
 
-        #undo 
+        #undo
         self.undo = Button(self.master,text="⟲",command=mainstack.undo,width = 2,height=-5,font=("Helvetica",10))
         self.undo.place(x=1070,y=15)
 
-        #redo 
+        #redo
         self.redo = Button(self.master,text="⟳",command=mainstack.redo,width=2,height=1,font=("Helvetica",10))
         self.redo.place(x=1110,y=15)
 
@@ -527,13 +521,6 @@ class userinterface():
         self.systemname = ("PYxis - System: {}{}-{}{}{}".format(alphabet[random.randint(0,25)],alphabet[random.randint(0,25)],random.randint(0,9),random.randint(0,9),random.randint(0,9))) #Standard string consentraition methods leave ugly curly brackets.
         self.master.wm_title(self.systemname)
 
-        ##Startoggle##
-        #debug 
-
-        #self.stackprint = Button(self.master,text="printstack",command=lambda: mainstack.printStack(),fg="green",activeforeground="green")
-        #self.stackprint.place(x=1140,y=18)
-
-        #self.startoggle()
     def startoggle(self): #make these shift all in one direction at some point
         if self.stary["text"] == "Toggle Stars off":
             self.window.delete("star")
@@ -600,7 +587,7 @@ class userinterface():
             self.selected = self.window.coords(OBD[line]["planet"])
             self.selectoval = self.window.create_oval(self.selected[0]-10,self.selected[1]-10,self.selected[2]+10,self.selected[3]+10,outline = "yellow",stipple="gray75",tags="s" )
             self.window.lower(self.selectoval)
-    
+
 ui = userinterface()
 
 def updateUI():
@@ -627,7 +614,7 @@ def updateUI():
 def safepause():
     if ui.tobepaused == True or ui.tobepausedcolour == True:
         if ui.tobepausedcolour == True:
-            playpause(True) 
+            playpause(True)
             askcolour(ui.prevpaused)
             playpause(False)
             ui.tobepausedcolour = False
