@@ -132,7 +132,7 @@ def deleteplanet(mod,undo):
             mainstack.push(tba)
         poplist.append(mod)
         if mod in anchorlist:
-            anchorlist.remove(anchorlist.index(mod))
+            anchorlist.pop(anchorlist.index(mod))
         if mod == ui.planetselected:
             ui.window.delete("s")
             ui.planetselected = 0
@@ -297,7 +297,7 @@ def educationmode():
     if ui.education["text"] != "←":
         ui.education["text"] = "←"
     else:
-        ui.education["text"] = "ツ"
+        ui.education["text"] = "X"
     edu = not edu
 
 class stack():
@@ -360,7 +360,7 @@ class stack():
             if self.StackArray[self.StackPointer][0] == "D":
                 deleteplanet(self.mod,True)
 
-mainstack = stack(100,18)
+mainstack = stack(1000,18)
 
 class userinterface():
     def __init__(self):
