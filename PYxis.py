@@ -256,13 +256,11 @@ def save(quick):
 
 def popplanets():
     global poplist
+    ##BUBBLESORT##
     for itterations in range(len(poplist)):
         for swaps in range(len(poplist)-1):     
             if poplist[swaps]<poplist[swaps+1]:
-                temp = poplist[swaps+1]
-                poplist[swaps+1] = poplist[swaps]
-                poplist[swaps] = temp
-    print(poplist)
+                poplist[swaps+1], poplist[swaps] = poplist[swaps],poplist[swaps+1]
     for planet in range(len(poplist)):
         try:
             ui.window.delete(OBD[poplist[planet]]["planet"])
@@ -278,9 +276,9 @@ def selectobject(event):
     try:
         if ui.window.gettags(closest)[0] == "oval":
             coords = ui.window.coords(closest)
-            for i in range(0,len(OBD)):
-                if coords == [OBD[i]["x0"],OBD[i]["y0"],OBD[i]["x1"],OBD[i]["y1"]]:
-                    ui.planetselected = i
+            for planets in range(0,len(OBD)):
+                if coords == [OBD[planets]["x0"],OBD[planets]["y0"],OBD[planets]["x1"],OBD[planets]["y1"]]:
+                    ui.planetselected = planets
     except:
         pass #planet is unavailable
 def deltrail():
@@ -528,11 +526,11 @@ class userinterface():
             self.stary["text"] = "Toggle Stars on"
             self.stary.config(fg="Red",activeforeground="Red")
         else:
-            for i in range(0,1000):
-                for x in range(0,1): #make this variable
+            for stars in range(0,1000):
+                for starsperline in range(0,1): #make this variable
                     ran = random.randint(0,1000)
                     colourcode = random.randint(0,255)
-                    self.window.create_oval(ran,i,ran,i,outline=('#%02x%02x%02x' % (colourcode,colourcode, colourcode)),tags="star")
+                    self.window.create_oval(ran,stars,ran,stars,outline=('#%02x%02x%02x' % (colourcode,colourcode, colourcode)),tags="star")
             self.stary["text"] = "Toggle Stars off"
             self.stary.config(fg="Green",activeforeground="Green")
 
