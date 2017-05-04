@@ -7,11 +7,7 @@ from tkinter import filedialog #Cannot run without this unless in IDLE
 from tkinter.colorchooser import *
 import time #needed for restriction of refresh rate (may not be needed)
 import math #needed for physics calculation
-import random #for some more fun parts of the program.
-#import datetime #for delta time calculations
-#functions and variables
-#many of these variables can easily be locatlised.
-
+import random #for some more "fun" parts of the program.
 
 #constants
 G = 6.6741  #simplfied
@@ -260,8 +256,13 @@ def save(quick):
 
 def popplanets():
     global poplist
-    poplist = sorted(poplist) #Delete highest first so that the indexes for the lower ones do not get changed.
-    poplist.reverse()
+    for itterations in range(len(poplist)):
+        for swaps in range(len(poplist)-1):     
+            if poplist[swaps]<poplist[swaps+1]:
+                temp = poplist[swaps+1]
+                poplist[swaps+1] = poplist[swaps]
+                poplist[swaps] = temp
+    print(poplist)
     for planet in range(len(poplist)):
         try:
             ui.window.delete(OBD[poplist[planet]]["planet"])
@@ -349,7 +350,7 @@ class stack():
             self.mod = self.fetchposition()
             if self.StackArray[self.StackPointer][0] == "A":
                 deleteplanet(self.mod,True)
-            if self.StackArray[self.StackPointer][0] == "D": #createplanet(rad,mass,x,y,R,G,B,cx,cy,theta):
+            if self.StackArray[self.StackPointer][0] == "D": 
                 createplanet(self.StackArray[self.StackPointer][12],self.StackArray[self.StackPointer][6],(self.StackArray[self.StackPointer][2]+self.StackArray[self.StackPointer][4])/2,(self.StackArray[self.StackPointer][3]+self.StackArray[self.StackPointer][5])/2,self.StackArray[self.StackPointer][13],self.StackArray[self.StackPointer][14],self.StackArray[self.StackPointer][15],self.StackArray[self.StackPointer][8],self.StackArray[self.StackPointer][9],self.StackArray[self.StackPointer][18],True,self.StackArray[self.StackPointer][1])
         self.pop()
     def redo(self):
@@ -367,7 +368,7 @@ class userinterface():
         self.master = Tk() #master window
         self.window = Canvas(self.master, width=1200, height=1000) #generate 1200x1000 canvas
         self.master.resizable(width=False,height=False)
-        self.window.pack() #packdat
+        self.window.pack() 
 
         try:
             self.master.iconbitmap("icon.ico")
@@ -377,7 +378,7 @@ class userinterface():
         #Basic UI elements#
         self.starttime = time.time()
         self.lasttime = self.starttime
-        self.window.configure(background="Black")#Main background
+        self.window.configure(background="Black") #Main background
         self.optionsbackground = self.window.create_rectangle(1001,0,1205,1000,fill="white") #white rectangle behind the options
         self.curtime = self.window.create_text(50,30,fill = "White") #Time running
         self.fps = self.window.create_text(150,30,fill = "White") #current FPS
@@ -580,7 +581,7 @@ class userinterface():
                 pass
         self.window.delete("shotoval")
     def select(self,line):
-        if self.planetselected > len(OBD) - 1: #if planet is rip
+        if self.planetselected > len(OBD) - 1: 
             self.planetselected = 0
         if line == self.planetselected:
             self.window.delete("s")
