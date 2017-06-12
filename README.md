@@ -1,6 +1,6 @@
 # PYxis - Python3 2D Celestial simulation.
 
-This project was created for my A-Level Edexcel Computer Science coursework.
+This project was created for my A-Level AQA Computer Science coursework.
 
 Named after [Pyxis](https://en.wikipedia.org/wiki/Pyxis). Also accidently named after [Pyxis](https://www.youtube.com/watch?v=3Ax6jTZlu_g) as well.
 
