@@ -2,7 +2,7 @@
 
 This project was created for my A-Level AQA Computer Science coursework.
 
-Named after [Pyxis](https://en.wikipedia.org/wiki/Pyxis). Also accidently named after [Pyxis](https://www.youtube.com/watch?v=3Ax6jTZlu_g) as well.
+Named after [Pyxis](https://en.wikipedia.org/wiki/Pyxis). Also accidentally named after [Pyxis](https://www.youtube.com/watch?v=3Ax6jTZlu_g) as well.
 
 This project would of achieved full marks if it was not for the lack of a design section and instead scraped an A.
 
